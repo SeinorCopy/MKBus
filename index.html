@@ -3,23 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MK Bus</title>
+<title>無印巴士</title>
 
 <!-- ===== Favicon ===== -->
 <link rel="icon" type="image/png" href="favicon.png">
 
-<!-- ===== Apple Touch Icon (加到主畫面) ===== -->
+<!-- ===== Apple Touch Icon ===== -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MK Bus">
+<meta name="apple-mobile-web-app-title" content="無印巴士">
 <meta name="theme-color" content="#f7f7f5">
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif; background: #f7f7f5; color: #333; padding: 32px 20px 100px; max-width: 420px; margin: 0 auto; line-height: 1.6; font-weight: 300; }
   
-  /* 頂部 bar (加入 App Logo) */
   .top-bar { position: relative; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .top-bar .app-logo { width: 28px; height: 28px; object-fit: contain; }
   .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #333; }
@@ -163,7 +162,6 @@
 
 <div id="loadingOverlay">正在載入全港路線及站點資料...</div>
 
-<!-- 頂部 bar：加入 App Logo -->
 <div class="top-bar">
   <img src="logo.png" alt="Logo" class="app-logo" onerror="this.style.display='none'">
   <h1 id="pageTitle">日 常</h1>
@@ -660,7 +658,7 @@ function performSearch() {
 
   currentSearchQuery = query; 
 
-  // 寫入歷史記錄
+  // 1. 寫入歷史記錄
   MOCK_HISTORY = MOCK_HISTORY.filter(h => h.route !== query);
   MOCK_HISTORY.unshift({
     route: query,
@@ -694,7 +692,7 @@ function performSearch() {
     return;
   }
 
-  // 去重
+  // 2. 去重
   const uniqueResults = [];
   const seen = new Set();
 
@@ -709,7 +707,7 @@ function performSearch() {
     }
   });
 
-  // 排序
+  // 3. 排序
   uniqueResults.sort((a, b) => {
     const ra = etaDb.routeList[a].route;
     const rb = etaDb.routeList[b].route;
