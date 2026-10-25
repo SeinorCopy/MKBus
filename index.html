@@ -6,183 +6,82 @@
 <title>巴士 UI (真實數據版)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif;
-    background: #f7f7f5;
-    color: #333;
-    padding: 32px 20px 100px;
-    max-width: 420px;
-    margin: 0 auto;
-    line-height: 1.6;
-    font-weight: 300;
-  }
-
-  /* ===== 頂部 bar ===== */
+  body { font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif; background: #f7f7f5; color: #333; padding: 32px 20px 100px; max-width: 420px; margin: 0 auto; line-height: 1.6; font-weight: 300; }
   .top-bar { position: relative; margin-bottom: 24px; text-align: center; }
   .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #555; }
-  .top-bar .gear {
-    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-    width: 22px; height: 22px; color: #bbb; cursor: pointer; transition: color .2s;
-  }
-  .top-bar .gear:hover { color: #333; }
-
-  /* ===== 通用 SVG ===== */
-  .svg-icon {
-    width: 20px; height: 20px;
-    stroke: currentColor; fill: none;
-    stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
-    display: block;
-  }
+  .top-bar .gear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; color: #bbb; cursor: pointer; transition: color .2s; }
+  .svg-icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; display: block; }
   .svg-icon.sm { width: 16px; height: 16px; }
   .svg-icon.fill { fill: currentColor; stroke: none; }
-
-  /* ===== 頁面 ===== */
   .page { display: none; }
   .page.active { display: block; }
+  
+  .search-mode { display: flex; gap: 12px; margin-bottom: 16px; font-size: 12px; letter-spacing: 1px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; }
+  .search-mode span { color: #bbb; cursor: pointer; transition: color .2s; padding: 2px 0; }
+  .search-mode span.active { color: #333; border-bottom: 1.5px solid #333; }
+  .search-mode span.disabled { color: #e0e0e0; cursor: not-allowed; }
 
-  /* ===== 搜尋頁面 ===== */
-  .search-area {
-    display: flex; gap: 12px; margin-bottom: 16px;
-    border-bottom: 1px solid #ddd; padding-bottom: 12px; align-items: center;
-  }
-  input {
-    flex: 1; padding: 8px 0; font-size: 16px; font-weight: 300;
-    border: none; background: transparent; outline: none; color: #333; letter-spacing: 1px;
-  }
+  .search-area { display: flex; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #ddd; padding-bottom: 12px; align-items: center; }
+  input { flex: 1; padding: 8px 0; font-size: 16px; font-weight: 300; border: none; background: transparent; outline: none; color: #333; letter-spacing: 1px; }
   input::placeholder { color: #bbb; }
-  button.search-btn {
-    padding: 8px; background: transparent; color: #999; border: none; cursor: pointer;
-    display: flex; align-items: center; transition: color .2s;
-  }
-  button.search-btn:hover { color: #333; }
-
-  .search-mode {
-    display: flex; gap: 16px; margin-bottom: 16px;
-    font-size: 12px; letter-spacing: 1px;
-  }
-  .search-mode span { color: #bbb; cursor: pointer; transition: color .2s; }
-  .search-mode span.active { color: #333; }
-
+  button.search-btn { padding: 8px; background: transparent; color: #999; border: none; cursor: pointer; display: flex; align-items: center; transition: color .2s; }
   .quick-routes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-  .quick-route {
-    padding: 4px 12px; font-size: 12px; letter-spacing: 1px;
-    border: 1px solid #ddd; color: #666; cursor: pointer;
-    transition: border-color .2s, color .2s;
-  }
-  .quick-route:hover { border-color: #999; color: #333; }
-
-  .dir-title {
-    font-size: 14px; color: #999; font-weight: 300;
-    letter-spacing: 1px; margin-bottom: 12px;
-  }
-
-  /* ===== 路線搜尋結果卡片 ===== */
-  .route-search-card {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 0; border-bottom: 1px solid #eee; cursor: pointer; transition: opacity .2s;
-  }
-  .route-search-card:last-child { border-bottom: none; }
-  .route-search-card:hover { opacity: 0.6; }
-
+  .quick-route { padding: 4px 12px; font-size: 12px; letter-spacing: 1px; border: 1px solid #ddd; color: #666; cursor: pointer; transition: border-color .2s, color .2s; }
+  .dir-title { font-size: 14px; color: #999; font-weight: 300; letter-spacing: 1px; margin-bottom: 12px; }
+  
+  /* 路線搜尋結果卡片 (改為文字顏色) */
+  .route-search-card { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #eee; cursor: pointer; transition: opacity .2s; }
   .route-search-left { display: flex; align-items: center; gap: 12px; }
   
-  /* 路線號碼牌 */
-  .route-badge {
-    display: flex; align-items: center; justify-content: center;
-    padding: 6px 12px; border-radius: 6px;
-    font-size: 18px; font-weight: 600; letter-spacing: 1px;
-    min-width: 64px; text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  /* 路線號碼：唔要方格，直接轉顏色 */
+  .route-number-text {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    min-width: 50px;
   }
-  
-  /* 顏色定義 */
-  .route-badge.default { background: #eee; color: #666; }
-  .route-badge.kmb { background: #E60012; color: #fff; } /* 九巴紅 */
-  .route-badge.ctb { background: #FDB913; color: #333; } /* 城巴黃 */
-  .route-badge.gmb { background: #00A650; color: #fff; } /* 小巴綠 */
+  .route-number-text.kmb { color: #E60012; } /* 九巴紅 */
+  .route-number-text.ctb { color: #D97706; } /* 城巴黃 (用深少少嘅黃/橙令佢睇得清) */
+  .route-number-text.gmb { color: #00A650; } /* 小巴綠 */
+  .route-number-text.default { color: #333; }
 
   .route-search-dest { font-size: 14px; color: #999; font-weight: 300; }
 
-  /* ===== 極簡站點列表 ===== */
-  .simple-stop-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 0; border-bottom: 1px solid #f2f2f2;
-  }
-  .simple-stop-item:last-child { border-bottom: none; }
-
+  .simple-stop-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #f2f2f2; }
   .simple-stop-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
-  .simple-stop-name {
-    font-size: 15px; color: #333; font-weight: 300;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .stop-code {
-    font-size: 10px; font-family: "SF Mono", "Menlo", monospace;
-    color: #bbb; background: #eee; padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
-  }
-
-  .simple-stop-right {
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: 12px;
-  }
-  .simple-eta {
-    font-size: 16px; font-weight: 400; color: #333; letter-spacing: 0.5px;
-    font-variant-numeric: tabular-nums; white-space: nowrap;
-  }
+  .simple-stop-name { font-size: 15px; color: #333; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stop-code { font-size: 10px; font-family: "SF Mono", "Menlo", monospace; color: #bbb; background: #eee; padding: 1px 4px; border-radius: 3px; flex-shrink: 0; }
+  .simple-stop-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: 12px; }
+  .simple-eta { font-size: 16px; font-weight: 400; color: #333; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .simple-eta .soon { font-size: 14px; color: #333; }
   .simple-eta .mins { font-size: 13px; color: #888; font-weight: 300; margin-left: 2px; }
-
-  /* ===== 日常/常用頁面大卡片 ===== */
   .daily-group { margin-bottom: 32px; }
-  .daily-group:last-child { margin-bottom: 0; }
-  
-  .fav-group-title {
-    font-size: 14px; color: #777; font-weight: 400; letter-spacing: 3px;
-    margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;
-    padding-bottom: 8px; border-bottom: 1px solid #ddd;
-  }
+  .fav-group-title { font-size: 14px; color: #777; font-weight: 400; letter-spacing: 3px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
   .fav-group-title .slot-icon { width: 18px; height: 18px; color: #777; flex-shrink: 0; stroke-width: 1.5; }
-  .fav-group-title .now {
-    font-size: 10px; letter-spacing: 1px; color: #777;
-    border: 1px solid #ccc; padding: 0 6px; border-radius: 2px; margin-left: auto;
-  }
+  .fav-group-title .now { font-size: 10px; letter-spacing: 1px; color: #777; border: 1px solid #ccc; padding: 0 6px; border-radius: 2px; margin-left: auto; }
   .fav-group-title .empty { font-size: 11px; letter-spacing: 1px; color: #ccc; margin-left: 4px; border: none; padding: 0; }
-
   .station-card { padding: 16px 0; border-bottom: 1px solid #eee; }
-  .station-card:last-child { border-bottom: none; }
-
-  .station-title {
-    font-size: 16px; color: #333; font-weight: 400; letter-spacing: 0.5px;
-    margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
-  }
+  .station-title { font-size: 16px; color: #333; font-weight: 400; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
   .station-name-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .station-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  
   .station-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px; }
   .star-station { width: 20px; height: 20px; color: #ccc; cursor: pointer; transition: color .2s; }
   .star-station.on { color: #333; }
-
   .route-list { display: flex; flex-direction: column; gap: 16px; }
   .route-row { display: flex; flex-direction: column; }
-
   .route-info-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 12px; }
+  .route-label { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   
-  /* 日常/常用卡片入面嘅小路線牌 */
-  .route-label {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 14px; font-weight: 400; color: #333;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .route-label .route-badge-sm {
-    display: inline-block;
-    padding: 2px 6px; border-radius: 4px;
-    font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
-    color: #fff;
-  }
-  .route-label .dest { color: #999; font-weight: 300; font-size: 13px; margin-left: 4px; }
+  /* 日常/常用卡片入面嘅路線號碼都轉埋顏色 */
+  .route-badge-sm { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; margin-right: 4px; }
+  .route-badge-sm.kmb { color: #E60012; }
+  .route-badge-sm.ctb { color: #D97706; }
+  .route-badge-sm.gmb { color: #00A650; }
+  .route-badge-sm.default { color: #333; }
 
+  .route-label .dest { color: #999; font-weight: 300; font-size: 13px; margin-left: 4px; }
   .eta-text { font-size: 14px; font-weight: 400; color: #333; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
   .eta-text .soon { font-weight: 400; }
   .eta-text .mins { color: #666; font-weight: 300; font-size: 13px; margin-left: 2px; }
-
   .route-progress-row { display: flex; align-items: center; width: 100%; }
   .progress-track { display: flex; align-items: center; width: 100%; position: relative; height: 16px; flex: 1; }
   .progress-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; flex-shrink: 0; z-index: 2; }
@@ -190,121 +89,55 @@
   .progress-line-bg { flex: 1; height: 1px; background: #eee; position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); z-index: 1; }
   .progress-buses { flex: 1; height: 100%; position: relative; margin: 0 6px; }
   .progress-bus { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; z-index: 3; }
-
   .route-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 12px; }
   .icon-btn { width: 18px; height: 18px; color: #ccc; cursor: pointer; transition: color .2s; display: flex; align-items: center; justify-content: center; }
-  .icon-btn:hover { color: #999; }
   .icon-btn.on { color: #333; }
-
-  /* ===== 常用 ===== */
   .drag-handle { display: none; width: 18px; height: 18px; color: #ccc; margin-right: 8px; cursor: grab; flex-shrink: 0; }
   .station-card.editing .drag-handle { display: block; }
   .station-card.dragging { opacity: 0.4; }
   .station-card.drag-over { border-top: 2px solid #333; }
-
   .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .section-head .label { font-size: 12px; color: #bbb; letter-spacing: 3px; text-indent: 3px; }
   .edit-btn { font-size: 12px; color: #999; letter-spacing: 1px; cursor: pointer; user-select: none; transition: color .2s; }
-  .edit-btn:hover { color: #333; }
   .edit-btn.done { color: #333; }
-
   .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
   .station-card.editing .del-btn { display: block; }
   .station-card.editing .icon-btn, .station-card.editing .route-progress-row { display: none; }
-
-  /* ===== 歷史記錄 ===== */
-  .history-item {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333;
-  }
+  .history-item { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333; }
   .history-item:last-child { border-bottom: none; }
   .history-left { flex: 1; min-width: 0; }
   .history-route { font-weight: 400; margin-right: 8px; }
   .history-dir { color: #999; font-size: 12px; }
   .history-time { font-size: 11px; color: #bbb; letter-spacing: 0.5px; white-space: nowrap; }
-
-  /* ===== Empty ===== */
   .empty-state { display: flex; flex-direction: column; align-items: center; padding: 32px 0; color: #ccc; }
   .empty-state .svg-icon { width: 32px; height: 32px; color: #ddd; margin-bottom: 8px; }
   .empty-state .text { font-size: 12px; letter-spacing: 1px; color: #bbb; }
-
-  /* ===== 底部 tab ===== */
-  #tabBar {
-    position: fixed; left: 0; right: 0; bottom: 0;
-    background: rgba(247,247,245,0.98); border-top: 1px solid #ddd;
-    max-width: 420px; margin: 0 auto; display: flex; z-index: 20;
-  }
-  .tab {
-    flex: 1; text-align: center; padding: 14px 0 16px;
-    font-size: 13px; letter-spacing: 2px; color: #bbb;
-    cursor: pointer; transition: color .2s; position: relative;
-  }
+  #tabBar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(247,247,245,0.98); border-top: 1px solid #ddd; max-width: 420px; margin: 0 auto; display: flex; z-index: 20; }
+  .tab { flex: 1; text-align: center; padding: 14px 0 16px; font-size: 13px; letter-spacing: 2px; color: #bbb; cursor: pointer; transition: color .2s; position: relative; }
   .tab.active { color: #333; }
   .tab .badge { position: absolute; top: 10px; right: 28%; width: 6px; height: 6px; border-radius: 50%; background: #d9534f; display: none; }
   .tab .badge.show { display: block; }
-
-  /* ===== 設定面板 ===== */
   #settingsOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 40; }
   #settingsOverlay.show { display: block; }
-  #settingsPanel {
-    position: fixed; top: 0; right: 0; bottom: 0; width: 82%; max-width: 340px;
-    background: #f7f7f5; box-shadow: -2px 0 12px rgba(0,0,0,0.08);
-    padding: 32px 24px; transform: translateX(100%);
-    transition: transform .25s ease; z-index: 41; overflow-y: auto;
-  }
+  #settingsPanel { position: fixed; top: 0; right: 0; bottom: 0; width: 82%; max-width: 340px; background: #f7f7f5; box-shadow: -2px 0 12px rgba(0,0,0,0.08); padding: 32px 24px; transform: translateX(100%); transition: transform .25s ease; z-index: 41; overflow-y: auto; }
   #settingsPanel.show { transform: translateX(0); }
-
   .settings-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
   .settings-head h2 { font-size: 15px; font-weight: 400; letter-spacing: 3px; color: #555; }
   .settings-head .close { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #999; cursor: pointer; letter-spacing: 1px; }
-  .settings-head .close:hover { color: #333; }
-
   .settings-section { font-size: 11px; color: #bbb; letter-spacing: 3px; text-indent: 3px; margin: 24px 0 4px; }
-  .settings-section:first-of-type { margin-top: 0; }
-
   .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #eee; font-size: 14px; color: #333; }
   .setting-row .sub { display: block; font-size: 11px; color: #bbb; letter-spacing: 0.5px; margin-top: 2px; }
-  
   .switch { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #ddd; cursor: pointer; transition: background .2s; flex-shrink: 0; }
   .switch.on { background: #333; }
   .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
   .switch.on::after { transform: translateX(16px); }
-
   .field-row { padding: 12px 0; border-bottom: 1px solid #eee; }
   .field-row label { display: block; font-size: 12px; color: #999; letter-spacing: 1px; margin-bottom: 4px; }
   .field-row input { width: 100%; padding: 6px 0; font-size: 14px; font-weight: 300; border: none; background: transparent; outline: none; color: #333; letter-spacing: 1px; font-family: "SF Mono", "Menlo", monospace; }
-  .field-row input::placeholder { color: #ccc; font-family: inherit; }
-  .field-row .hint { font-size: 10px; color: #ccc; letter-spacing: 0.5px; margin-top: 4px; }
-
-  .time-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #666; }
-  .time-row .label { width: 48px; color: #999; letter-spacing: 1px; }
-  .time-row input { width: 48px; padding: 4px; font-size: 14px; font-weight: 300; border: 1px solid #ddd; background: transparent; outline: none; color: #333; text-align: center; font-variant-numeric: tabular-nums; }
-  .time-row .sep { color: #ccc; }
-
-  /* 匯出匯入 */
-  .backup-btn {
-    display: block; width: 100%; padding: 12px 0; margin-top: 8px;
-    background: transparent; border: 1px solid #ddd; color: #333;
-    font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: border-color .2s;
-  }
-  .backup-btn:hover { border-color: #999; }
-  .backup-textarea {
-    width: 100%; height: 80px; padding: 10px; margin-top: 8px;
-    border: 1px solid #ddd; background: #fff; font-size: 12px;
-    font-family: "SF Mono", "Menlo", monospace; color: #666;
-    resize: none; outline: none;
-  }
-
-  /* ===== Toast ===== */
-  #toast {
-    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: #333; color: #fff; font-size: 13px; letter-spacing: 1px;
-    padding: 10px 20px; opacity: 0; transition: opacity .3s, transform .3s;
-    pointer-events: none; z-index: 60; white-space: nowrap;
-  }
+  .backup-btn { display: block; width: 100%; padding: 12px 0; margin-top: 8px; background: transparent; border: 1px solid #ddd; color: #333; font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: border-color .2s; }
+  .backup-textarea { width: 100%; height: 80px; padding: 10px; margin-top: 8px; border: 1px solid #ddd; background: #fff; font-size: 12px; font-family: "SF Mono", "Menlo", monospace; color: #666; resize: none; outline: none; }
+  #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; font-size: 13px; letter-spacing: 1px; padding: 10px 20px; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 60; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* ===== 星掣選單 ===== */
   .star-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 200px; }
   .star-menu .menu-title { padding: 10px 16px 6px; font-size: 10px; letter-spacing: 2px; color: #bbb; border-bottom: 1px solid #eee; }
   .star-menu .item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; }
@@ -314,24 +147,16 @@
   .star-menu .item .check { margin-left: auto; width: 14px; height: 14px; color: #333; }
   .star-menu .item .check.hidden { visibility: hidden; }
   .star-menu .item.cancel { color: #999; justify-content: center; font-size: 12px; letter-spacing: 1px; }
-
   .push-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 180px; }
   .push-menu .item { padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; text-align: center; }
   .push-menu .item:last-child { border-bottom: none; }
   .push-menu .item:hover { background: #f7f7f5; }
-
-  /* Loading Overlay */
-  #loadingOverlay {
-    position: fixed; inset: 0; background: rgba(247,247,245,0.9); z-index: 100;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    color: #555; font-size: 14px; letter-spacing: 1px;
-  }
+  #loadingOverlay { position: fixed; inset: 0; background: rgba(247,247,245,0.9); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 14px; letter-spacing: 1px; }
   #loadingOverlay.hide { display: none; }
 </style>
 </head>
 <body>
 
-<!-- Loading Screen -->
 <div id="loadingOverlay">正在載入全港路線及站點資料...</div>
 
 <div class="top-bar">
@@ -348,11 +173,14 @@
 
 <div class="page" id="pageSearch">
   <div class="search-mode">
-    <span class="active" data-mode="route">路線</span>
-    <span data-mode="stop">站點</span>
+    <span class="active" data-mode="bus">巴士</span>
+    <span class="disabled">小巴</span>
+    <span class="disabled">港鐵</span>
+    <span class="disabled">輕鐵</span>
+    <span class="disabled">渡輪</span>
   </div>
   <div class="search-area">
-    <input id="searchInput" placeholder="輸入路線號碼" />
+    <input id="searchInput" placeholder="輸入巴士路線號碼" />
     <button class="search-btn" id="searchBtn" title="搜尋">
       <svg class="svg-icon" viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="7"/>
@@ -408,11 +236,6 @@
     <div>顯示「即將到站」<span class="sub">關閉後只顯示分鐘數</span></div>
     <div class="switch on" data-setting="soon"></div>
   </div>
-
-  <div class="settings-section">時 段 範 圍</div>
-  <div class="time-row"><span class="label">早上</span><input id="tMorning" value="06" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <input id="tNoon" value="12" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span></div>
-  <div class="time-row"><span class="label">中午</span><input id="tNoon2" value="12" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <input id="tEvening" value="18" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span></div>
-  <div class="time-row"><span class="label">晚上</span><input id="tEvening2" value="18" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <span style="color:#999;">翌日 <span id="tMorning2">06</span>:00</span></div>
 
   <div class="settings-section">推 送 通 知（Pushover）</div>
   <div class="field-row">
@@ -488,28 +311,29 @@ function currentSlot() {
   return "evening";
 }
 
-// ===== 營辦商標籤 Helper (安全處理 Object/String) =====
-function getCoStr(co) {
-  if (!co) return "";
-  if (typeof co === 'string') return co.toLowerCase();
-  if (typeof co === 'object') return (co.zh || co.en || "").toLowerCase();
-  return String(co).toLowerCase();
+// ===== 營辦商標籤 Helper =====
+function getCoArray(co) {
+  if (!co) return [];
+  if (Array.isArray(co)) return co.map(c => String(c).toLowerCase());
+  if (typeof co === 'string') return [co.toLowerCase()];
+  if (typeof co === 'object') return [String(co.zh || co.en || "").toLowerCase()];
+  return [String(co).toLowerCase()];
 }
 
 function getCompanyClass(co) {
-  const c = getCoStr(co);
-  if (c.includes('kmb')) return 'kmb';
-  if (c.includes('ctb') || c.includes('nwfb')) return 'ctb';
-  if (c.includes('gmb')) return 'gmb';
+  const arr = getCoArray(co);
+  if (arr.some(c => c.includes('kmb'))) return 'kmb';
+  if (arr.some(c => c.includes('ctb') || c.includes('nwfb'))) return 'ctb';
+  if (arr.some(c => c.includes('gmb'))) return 'gmb';
   return 'default';
 }
 
 function getCompanyName(co) {
-  const c = getCoStr(co);
-  if (c.includes('kmb')) return '九巴';
-  if (c.includes('ctb') || c.includes('nwfb')) return '城巴';
-  if (c.includes('gmb')) return '小巴';
-  return c.toUpperCase();
+  const arr = getCoArray(co);
+  if (arr.some(c => c.includes('kmb'))) return '九巴';
+  if (arr.some(c => c.includes('ctb') || c.includes('nwfb'))) return '城巴';
+  if (arr.some(c => c.includes('gmb'))) return '小巴';
+  return arr.join(', ').toUpperCase();
 }
 
 // ===== 渲染進度條 & ETA =====
@@ -540,7 +364,7 @@ function renderProgressBar(etas) {
 }
 
 function renderEtaHtml(etas) {
-  if (!etas || etas.length === 0) return `<div class="eta-text" style="color:#ccc;">沒有實時數據</div>`;
+  if (!etas || etas.length === 0) return `<div class="eta-text" style="color:#ccc;">暫無班次</div>`;
   let textHtml = etas.map(m => {
     if (m === null) return `<span class="soon">-</span>`;
     if (m <= 0) {
@@ -571,15 +395,17 @@ async function fetchRealEtas(station) {
     });
 
     const now = Date.now();
+    const minsArray = etas.map(e => {
+      if (!e.eta) return null;
+      const diff = Math.round((new Date(e.eta).getTime() - now) / 60000);
+      return diff < 0 ? 0 : diff;
+    });
+
     station.routes = [{
       route: routeData.route,
       dest: routeData.dest.zh,
       co: routeData.co,
-      etas: etas.map(e => {
-        if (!e.eta) return null;
-        const diff = Math.round((new Date(e.eta).getTime() - now) / 60000);
-        return diff < 0 ? 0 : diff;
-      })
+      etas: minsArray
     }];
     
     if (document.getElementById("pageDaily").classList.contains("active")) renderDaily();
@@ -598,7 +424,7 @@ function renderStationCard(station, isEditing) {
     <div class="route-row">
       <div class="route-info-row">
         <div class="route-label">
-          <span class="route-badge-sm ${coClass}" style="${coClass === 'ctb' ? 'color:#333;' : ''}">${r.route}</span>
+          <span class="route-badge-sm ${coClass}">${r.route}</span>
           <span class="dest">往 ${r.dest}</span>
         </div>
         ${renderEtaHtml(r.etas)}
@@ -820,9 +646,13 @@ function resetSearchPage() {
   renderQuickRoutes();
 }
 
+let currentSearchQuery = ""; // 記住上次搜尋字眼
+
 function performSearch() {
   const query = document.getElementById("searchInput").value.trim().toUpperCase();
   if (!query) return;
+
+  currentSearchQuery = query; // Save 起佢
 
   if (!QUICK_ROUTES.includes(query)) {
     QUICK_ROUTES.unshift(query);
@@ -834,24 +664,28 @@ function performSearch() {
 
   const container = document.getElementById("searchResultsContainer");
   
+  // 只搜尋巴士路線，排除 gmb (小巴)
   const routeKeys = Object.keys(etaDb.routeList);
   const results = routeKeys.filter(key => {
-    return etaDb.routeList[key].route.toUpperCase().includes(query);
+    const r = etaDb.routeList[key];
+    const coArr = getCoArray(r.co);
+    if (coArr.some(c => c.includes('gmb'))) return false;
+    return r.route.toUpperCase().includes(query);
   });
 
   if (results.length === 0) {
-    container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到路線 ${query}</div></div>`;
+    container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到巴士路線 ${query}</div></div>`;
     return;
   }
 
-  // 【修正重點】安全排序：將 object 轉做 string 先比較
+  // 安全排序
   results.sort((a, b) => {
     const ra = etaDb.routeList[a].route;
     const rb = etaDb.routeList[b].route;
     if (ra !== rb) return ra.localeCompare(rb, undefined, { numeric: true });
     
-    const coA = getCoStr(etaDb.routeList[a].co);
-    const coB = getCoStr(etaDb.routeList[b].co);
+    const coA = getCoArray(etaDb.routeList[a].co).join(',');
+    const coB = getCoArray(etaDb.routeList[b].co).join(',');
     return coA.localeCompare(coB);
   });
 
@@ -867,7 +701,7 @@ function performSearch() {
     
     div.innerHTML = `
       <div class="route-search-left">
-        <div class="route-badge ${coClass}">${routeData.route}</div>
+        <div class="route-number-text ${coClass}">${routeData.route}</div>
         <span class="route-search-dest">往 ${routeData.dest.zh}</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
@@ -880,6 +714,20 @@ function performSearch() {
     container.appendChild(div);
   });
 }
+
+// 返回路線列表 (重新觸發上次嘅搜尋)
+window.resetSearchPage = () => {
+  if (currentSearchQuery) {
+    document.getElementById("searchInput").value = currentSearchQuery;
+    performSearch();
+  } else {
+    document.getElementById("searchResultsContainer").innerHTML = `
+      <div class="dir-title">最近搜尋</div>
+      <div id="quickRoutes" class="quick-routes"></div>
+    `;
+    renderQuickRoutes();
+  }
+};
 
 // 撳路線後，展開站點列表
 async function renderRouteStops(routeKey) {
@@ -897,35 +745,65 @@ async function renderRouteStops(routeKey) {
   container.innerHTML = html;
 
   const stopListEl = document.getElementById("stopListContainer");
-  let stopHtml = "";
+  
+  // 根據營辦商攞返正確嘅站點陣列
+  const coArr = getCoArray(routeData.co);
+  let stopsArray = [];
+  if (coArr.some(c => c.includes('kmb')) && routeData.stops.kmb) {
+    stopsArray = routeData.stops.kmb;
+  } else if (coArr.some(c => c.includes('ctb')) && routeData.stops.ctb) {
+    stopsArray = routeData.stops.ctb;
+  } else if (coArr.some(c => c.includes('nwfb')) && routeData.stops.nwfb) {
+    stopsArray = routeData.stops.nwfb;
+  } else {
+    const firstKey = Object.keys(routeData.stops)[0];
+    if (firstKey) stopsArray = routeData.stops[firstKey];
+  }
 
-  for (let i = 0; i < routeData.stops.length; i++) {
-    const stopId = routeData.stops[i];
-    const stopInfo = etaDb.stopList[stopId];
-    
-    const etas = await fetchEtas({ ...routeData, seq: i, language: "zh" });
-    const now = Date.now();
-    const mins = etas.map(e => e.eta ? Math.round((new Date(e.eta).getTime() - now) / 60000) : null);
+  // 1. 先建立所有 Promise，但唔好即刻 await
+  const fetchPromises = stopsArray.map((stopId, i) => {
+    return fetchEtas({ ...routeData, seq: i, language: "zh" })
+      .then(etas => {
+        const now = Date.now();
+        const minsArray = etas.map(e => e.eta ? Math.round((new Date(e.eta).getTime() - now) / 60000) : null);
+        return { stopId, index: i, minsArray };
+      })
+      .catch(e => {
+        console.error("ETA 錯誤", e);
+        return { stopId, index: i, minsArray: [] };
+      });
+  });
+
+  // 2. 一次過等晒所有 Promise 完成
+  const results = await Promise.all(fetchPromises);
+
+  // 3. 砌 HTML
+  let stopHtml = "";
+  results.forEach(({ stopId, index, minsArray }) => {
+    const stopInfo = etaDb.stopList[stopId]; 
+    let stopName = `未知站點 (${stopId})`;
+    if (stopInfo && stopInfo.name && stopInfo.name.zh) {
+      stopName = stopInfo.name.zh;
+    }
+    const stopCode = (stopInfo && stopInfo.code) ? stopInfo.code : "";
 
     stopHtml += `
       <div class="simple-stop-item">
         <div class="simple-stop-left">
-          <span class="simple-stop-name">${stopInfo.name.zh}</span>
-          ${stopInfo.code ? `<span class="stop-code">${stopInfo.code}</span>` : ""}
+          <span class="simple-stop-name">${stopName}</span>
+          ${stopCode ? `<span class="stop-code">${stopCode}</span>` : ""}
         </div>
         <div class="simple-stop-right">
-          <div class="simple-eta">${renderEtaHtml(mins).replace('<div class="eta-text">','').replace('</div>','')}</div>
-          <span class="star-station" data-stop-id="${stopId}" data-stop-name="${stopInfo.name.zh}" data-route-key="${routeKey}" data-seq="${i}" style="width:18px;height:18px;" title="收藏此站">${SVG.star}</span>
+          <div class="simple-eta">${renderEtaHtml(minsArray).replace('<div class="eta-text">','').replace('</div>','')}</div>
+          <span class="star-station" data-stop-id="${stopId}" data-stop-name="${stopName}" data-route-key="${routeKey}" data-seq="${index}" style="width:18px;height:18px;" title="收藏此站">${SVG.star}</span>
         </div>
       </div>
     `;
-  }
+  });
 
   stopListEl.innerHTML = stopHtml;
   updateStarState();
 }
-
-window.resetSearchPage = resetSearchPage;
 
 document.getElementById("searchBtn").onclick = performSearch;
 document.getElementById("searchInput").addEventListener("keydown", e => {
@@ -992,7 +870,7 @@ document.body.addEventListener("click", e => {
 
       const newStationObj = {
         stopId, stopName, routeKey, seq,
-        stopCode: stopInfo.code || "",
+        stopCode: (stopInfo && stopInfo.code) ? stopInfo.code : "",
         routes: [{ route: routeData.route, dest: routeData.dest.zh, co: routeData.co, etas: [] }]
       };
 
