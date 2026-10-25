@@ -3,13 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>巴士 UI (真實數據版)</title>
+<title>MK Bus</title>
+
+<!-- ===== Favicon ===== -->
+<link rel="icon" type="image/png" href="favicon.png">
+
+<!-- ===== Apple Touch Icon (加到主畫面) ===== -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MK Bus">
+<meta name="theme-color" content="#f7f7f5">
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif; background: #f7f7f5; color: #333; padding: 32px 20px 100px; max-width: 420px; margin: 0 auto; line-height: 1.6; font-weight: 300; }
-  .top-bar { position: relative; margin-bottom: 24px; text-align: center; }
-  .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #555; }
+  
+  /* 頂部 bar (加入 App Logo) */
+  .top-bar { position: relative; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .top-bar .app-logo { width: 28px; height: 28px; object-fit: contain; }
+  .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #333; }
   .top-bar .gear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; color: #bbb; cursor: pointer; transition: color .2s; }
+
   .svg-icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; display: block; }
   .svg-icon.sm { width: 16px; height: 16px; }
   .svg-icon.fill { fill: currentColor; stroke: none; }
@@ -29,22 +44,13 @@
   .quick-route { padding: 4px 12px; font-size: 12px; letter-spacing: 1px; border: 1px solid #ddd; color: #666; cursor: pointer; transition: border-color .2s, color .2s; }
   .dir-title { font-size: 14px; color: #999; font-weight: 300; letter-spacing: 1px; margin-bottom: 12px; }
   
-  /* 路線搜尋結果卡片 (改為文字顏色) */
   .route-search-card { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #eee; cursor: pointer; transition: opacity .2s; }
   .route-search-left { display: flex; align-items: center; gap: 12px; }
-  
-  /* 路線號碼：唔要方格，直接轉顏色 */
-  .route-number-text {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    min-width: 50px;
-  }
-  .route-number-text.kmb { color: #E60012; } /* 九巴紅 */
-  .route-number-text.ctb { color: #D97706; } /* 城巴黃 (用深少少嘅黃/橙令佢睇得清) */
-  .route-number-text.gmb { color: #00A650; } /* 小巴綠 */
+  .route-number-text { font-size: 20px; font-weight: 600; letter-spacing: 1px; min-width: 50px; }
+  .route-number-text.kmb { color: #E60012; }
+  .route-number-text.ctb { color: #D97706; }
+  .route-number-text.gmb { color: #00A650; }
   .route-number-text.default { color: #333; }
-
   .route-search-dest { font-size: 14px; color: #999; font-weight: 300; }
 
   .simple-stop-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #f2f2f2; }
@@ -55,6 +61,7 @@
   .simple-eta { font-size: 16px; font-weight: 400; color: #333; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .simple-eta .soon { font-size: 14px; color: #333; }
   .simple-eta .mins { font-size: 13px; color: #888; font-weight: 300; margin-left: 2px; }
+  
   .daily-group { margin-bottom: 32px; }
   .fav-group-title { font-size: 14px; color: #777; font-weight: 400; letter-spacing: 3px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
   .fav-group-title .slot-icon { width: 18px; height: 18px; color: #777; flex-shrink: 0; stroke-width: 1.5; }
@@ -70,14 +77,11 @@
   .route-row { display: flex; flex-direction: column; }
   .route-info-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 12px; }
   .route-label { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  
-  /* 日常/常用卡片入面嘅路線號碼都轉埋顏色 */
   .route-badge-sm { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; margin-right: 4px; }
   .route-badge-sm.kmb { color: #E60012; }
   .route-badge-sm.ctb { color: #D97706; }
   .route-badge-sm.gmb { color: #00A650; }
   .route-badge-sm.default { color: #333; }
-
   .route-label .dest { color: #999; font-weight: 300; font-size: 13px; margin-left: 4px; }
   .eta-text { font-size: 14px; font-weight: 400; color: #333; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
   .eta-text .soon { font-weight: 400; }
@@ -103,7 +107,7 @@
   .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
   .station-card.editing .del-btn { display: block; }
   .station-card.editing .icon-btn, .station-card.editing .route-progress-row { display: none; }
-  .history-item { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333; }
+  .history-item { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333; cursor: pointer; }
   .history-item:last-child { border-bottom: none; }
   .history-left { flex: 1; min-width: 0; }
   .history-route { font-weight: 400; margin-right: 8px; }
@@ -159,7 +163,9 @@
 
 <div id="loadingOverlay">正在載入全港路線及站點資料...</div>
 
+<!-- 頂部 bar：加入 App Logo -->
 <div class="top-bar">
+  <img src="logo.png" alt="Logo" class="app-logo" onerror="this.style.display='none'">
   <h1 id="pageTitle">日 常</h1>
   <svg class="gear" id="gearBtn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="3"/>
@@ -519,7 +525,7 @@ function renderHistory() {
     return;
   }
   el.innerHTML = MOCK_HISTORY.map(h => `
-    <div class="history-item">
+    <div class="history-item" onclick="document.getElementById('searchInput').value='${h.route}'; document.querySelector('.tab[data-page=pageSearch]').click(); performSearch();">
       <span class="history-left"><span class="history-route">${h.route}</span><span class="history-dir">${h.dest}</span></span>
       <span class="history-time">${h.time}</span>
     </div>
@@ -646,13 +652,24 @@ function resetSearchPage() {
   renderQuickRoutes();
 }
 
-let currentSearchQuery = ""; // 記住上次搜尋字眼
+let currentSearchQuery = ""; 
 
 function performSearch() {
   const query = document.getElementById("searchInput").value.trim().toUpperCase();
   if (!query) return;
 
-  currentSearchQuery = query; // Save 起佢
+  currentSearchQuery = query; 
+
+  // 寫入歷史記錄
+  MOCK_HISTORY = MOCK_HISTORY.filter(h => h.route !== query);
+  MOCK_HISTORY.unshift({
+    route: query,
+    dest: "搜尋路線",
+    time: "今日 " + new Date().toTimeString().slice(0, 5)
+  });
+  if (MOCK_HISTORY.length > 10) MOCK_HISTORY.pop();
+  saveStorage();
+  renderHistory();
 
   if (!QUICK_ROUTES.includes(query)) {
     QUICK_ROUTES.unshift(query);
@@ -664,22 +681,36 @@ function performSearch() {
 
   const container = document.getElementById("searchResultsContainer");
   
-  // 只搜尋巴士路線，排除 gmb (小巴)
   const routeKeys = Object.keys(etaDb.routeList);
-  const results = routeKeys.filter(key => {
+  const rawResults = routeKeys.filter(key => {
     const r = etaDb.routeList[key];
     const coArr = getCoArray(r.co);
     if (coArr.some(c => c.includes('gmb'))) return false;
     return r.route.toUpperCase().includes(query);
   });
 
-  if (results.length === 0) {
+  if (rawResults.length === 0) {
     container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到巴士路線 ${query}</div></div>`;
     return;
   }
 
-  // 安全排序
-  results.sort((a, b) => {
+  // 去重
+  const uniqueResults = [];
+  const seen = new Set();
+
+  rawResults.forEach(key => {
+    const r = etaDb.routeList[key];
+    const boundStr = typeof r.bound === 'object' ? JSON.stringify(r.bound) : String(r.bound);
+    const uniqueKey = `${r.route}_${r.orig.zh}_${r.dest.zh}_${boundStr}`;
+    
+    if (!seen.has(uniqueKey)) {
+      seen.add(uniqueKey);
+      uniqueResults.push(key);
+    }
+  });
+
+  // 排序
+  uniqueResults.sort((a, b) => {
     const ra = etaDb.routeList[a].route;
     const rb = etaDb.routeList[b].route;
     if (ra !== rb) return ra.localeCompare(rb, undefined, { numeric: true });
@@ -689,9 +720,9 @@ function performSearch() {
     return coA.localeCompare(coB);
   });
 
-  container.innerHTML = `<div class="dir-title">搜尋結果 (${results.length})</div>`;
+  container.innerHTML = `<div class="dir-title">搜尋結果 (${uniqueResults.length})</div>`;
   
-  results.forEach(key => {
+  uniqueResults.forEach(key => {
     const routeData = etaDb.routeList[key];
     const coClass = getCompanyClass(routeData.co);
     const coName = getCompanyName(routeData.co);
@@ -715,7 +746,7 @@ function performSearch() {
   });
 }
 
-// 返回路線列表 (重新觸發上次嘅搜尋)
+// 返回路線列表
 window.resetSearchPage = () => {
   if (currentSearchQuery) {
     document.getElementById("searchInput").value = currentSearchQuery;
@@ -746,7 +777,6 @@ async function renderRouteStops(routeKey) {
 
   const stopListEl = document.getElementById("stopListContainer");
   
-  // 根據營辦商攞返正確嘅站點陣列
   const coArr = getCoArray(routeData.co);
   let stopsArray = [];
   if (coArr.some(c => c.includes('kmb')) && routeData.stops.kmb) {
@@ -760,7 +790,7 @@ async function renderRouteStops(routeKey) {
     if (firstKey) stopsArray = routeData.stops[firstKey];
   }
 
-  // 1. 先建立所有 Promise，但唔好即刻 await
+  // 1. 先建立所有 Promise
   const fetchPromises = stopsArray.map((stopId, i) => {
     return fetchEtas({ ...routeData, seq: i, language: "zh" })
       .then(etas => {
@@ -774,7 +804,7 @@ async function renderRouteStops(routeKey) {
       });
   });
 
-  // 2. 一次過等晒所有 Promise 完成
+  // 2. 一次過等晒
   const results = await Promise.all(fetchPromises);
 
   // 3. 砌 HTML
