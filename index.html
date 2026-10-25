@@ -3,24 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MK Bus</title>
-
-<!-- ===== Favicon ===== -->
-<link rel="icon" type="image/png" href="favicon.png">
-
-<!-- ===== Apple Touch Icon ===== -->
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MK Bus">
-<meta name="theme-color" content="#f7f7f5">
+<title>無印巴士</title>
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif; background: #f7f7f5; color: #333; padding: 32px 20px 100px; max-width: 420px; margin: 0 auto; line-height: 1.6; font-weight: 300; }
   
   .top-bar { position: relative; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .top-bar .app-logo { width: 28px; height: 28px; object-fit: contain; }
   .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #333; }
   .top-bar .gear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; color: #bbb; cursor: pointer; transition: color .2s; }
 
@@ -166,7 +155,7 @@
   <h1 id="pageTitle">日 常</h1>
   <svg class="gear" id="gearBtn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="3"/>
-    <path d="..."/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 </div>
 
@@ -379,9 +368,10 @@ function renderEtaHtml(etas) {
   return `<div class="eta-text">${textHtml}</div>`;
 }
 
-function whereSaved(stopId) {
-  const daily = DAILY_FAVS.filter(f => f.stopId === stopId).map(f => f.slot);
-  const fav = MY_ROUTES.some(f => f.stopId === stopId);
+// ===== 核心修正：改用 routeKey + stopId 做 Key =====
+function whereSaved(stopId, routeKey) {
+  const daily = DAILY_FAVS.filter(f => f.stopId === stopId && f.routeKey === routeKey).map(f => f.slot);
+  const fav = MY_ROUTES.some(f => f.stopId === stopId && f.routeKey === routeKey);
   return { daily, fav };
 }
 
@@ -443,11 +433,11 @@ function renderStationCard(station, isEditing) {
     <span class="star-station" data-stop-id="${station.stopId}" data-stop-name="${station.stopName}" data-route-key="${station.routeKey}" data-seq="${station.seq}" title="收藏此站">${SVG.star}</span>
   `;
   let dragHtml = isEditing ? `<span class="drag-handle">${SVG.drag}</span>` : "";
-  let delHtml = isEditing ? `<span class="del-btn" data-del="${station.stopId}-${station.seq}">${SVG.x}</span>` : "";
+  let delHtml = isEditing ? `<span class="del-btn" data-del="${station.routeKey}-${station.stopId}-${station.seq}">${SVG.x}</span>` : "";
   let editClass = isEditing ? "editing" : "";
 
   return `
-    <div class="station-card ${editClass}" data-id="${station.stopId}-${station.seq}" draggable="${isEditing}">
+    <div class="station-card ${editClass}" data-id="${station.routeKey}-${station.stopId}-${station.seq}" draggable="${isEditing}">
       <div class="station-title">
         <div class="station-name-wrap">
           ${dragHtml}${delHtml}
@@ -496,12 +486,13 @@ function renderFav() {
   applyEditMode();
 }
 
-// 更新星號狀態
+// 更新星號狀態 (加入 routeKey 判斷)
 function updateStarState() {
   document.querySelectorAll(".star-station").forEach(btn => {
     const stopId = btn.dataset.stopId;
-    if (!stopId) return;
-    const saved = whereSaved(stopId);
+    const routeKey = btn.dataset.routeKey;
+    if (!stopId || !routeKey) return;
+    const saved = whereSaved(stopId, routeKey);
     const has = saved.daily.length > 0 || saved.fav;
     btn.classList.toggle("on", has);
     btn.innerHTML = has ? SVG.starFill : SVG.star;
@@ -546,9 +537,11 @@ const overlay = document.getElementById("settingsOverlay");
 const panel = document.getElementById("settingsPanel");
 function openSettings() { overlay.classList.add("show"); panel.classList.add("show"); }
 function closeSettings() { overlay.classList.remove("show"); panel.classList.remove("show"); }
-document.getElementById("gearBtn").onclick = openSettings;
-document.getElementById("closeSettings").onclick = closeSettings;
-overlay.onclick = closeSettings;
+const gearBtn = document.getElementById("gearBtn");
+if (gearBtn) gearBtn.onclick = openSettings;
+const closeBtn = document.getElementById("closeSettings");
+if (closeBtn) closeBtn.onclick = closeSettings;
+if (overlay) overlay.onclick = closeSettings;
 
 document.querySelectorAll(".switch[data-setting]").forEach(sw => {
   sw.onclick = () => {
@@ -605,7 +598,7 @@ document.getElementById("favList").addEventListener("click", e => {
   const del = e.target.closest("[data-del]");
   if (!del) return;
   const id = del.dataset.del;
-  MY_ROUTES = MY_ROUTES.filter(f => `${f.stopId}-${f.seq}` !== id);
+  MY_ROUTES = MY_ROUTES.filter(f => `${f.routeKey}-${f.stopId}-${f.seq}` !== id);
   saveStorage(); renderFav(); updateStarState();
 });
 
@@ -621,8 +614,8 @@ function bindDrag() {
       e.preventDefault(); item.classList.remove("drag-over");
       if (!dragSrc || item === dragSrc) return;
       const srcId = dragSrc.dataset.id, dstId = item.dataset.id;
-      const srcIdx = MY_ROUTES.findIndex(f => `${f.stopId}-${f.seq}` === srcId);
-      const dstIdx = MY_ROUTES.findIndex(f => `${f.stopId}-${f.seq}` === dstId);
+      const srcIdx = MY_ROUTES.findIndex(f => `${f.routeKey}-${f.stopId}-${f.seq}` === srcId);
+      const dstIdx = MY_ROUTES.findIndex(f => `${f.routeKey}-${f.stopId}-${f.seq}` === dstId);
       if (srcIdx < 0 || dstIdx < 0) return;
       const [moved] = MY_ROUTES.splice(srcIdx, 1);
       MY_ROUTES.splice(dstIdx, 0, moved);
@@ -657,7 +650,7 @@ function performSearch() {
 
   currentSearchQuery = query; 
 
-  // 1. 寫入歷史記錄
+  // 寫入歷史記錄
   MOCK_HISTORY = MOCK_HISTORY.filter(h => h.route !== query);
   MOCK_HISTORY.unshift({
     route: query,
@@ -691,7 +684,7 @@ function performSearch() {
     return;
   }
 
-  // 2. 去重
+  // 去重
   const uniqueResults = [];
   const seen = new Set();
 
@@ -706,7 +699,7 @@ function performSearch() {
     }
   });
 
-  // 3. 排序
+  // 排序
   uniqueResults.sort((a, b) => {
     const ra = etaDb.routeList[a].route;
     const rb = etaDb.routeList[b].route;
@@ -837,7 +830,7 @@ document.getElementById("searchInput").addEventListener("keydown", e => {
   if (e.key === "Enter") performSearch();
 });
 
-// ===== 星掣選單 =====
+// ===== 星掣選單 (加入 routeKey 判斷) =====
 document.body.addEventListener("click", e => {
   const btn = e.target.closest(".star-station");
   if (!btn) return;
@@ -853,7 +846,7 @@ document.body.addEventListener("click", e => {
     return;
   }
 
-  const saved = whereSaved(stopId);
+  const saved = whereSaved(stopId, routeKey);
   const hasAny = saved.daily.length > 0 || saved.fav;
 
   document.querySelectorAll(".push-menu").forEach(m => m.remove());
@@ -902,20 +895,20 @@ document.body.addEventListener("click", e => {
       };
 
       if (target === "remove-all") {
-        DAILY_FAVS = DAILY_FAVS.filter(f => f.stopId !== stopId);
-        MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
+        DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
+        MY_ROUTES = MY_ROUTES.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
       } else if (target === "daily") {
         const slot = it.dataset.slot;
-        const exists = DAILY_FAVS.some(f => f.stopId === stopId && f.slot === slot);
+        const exists = DAILY_FAVS.some(f => f.stopId === stopId && f.routeKey === routeKey && f.slot === slot);
         if (exists) {
-          DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.slot === slot));
+          DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.routeKey === routeKey && f.slot === slot));
         } else {
           DAILY_FAVS.push({ ...newStationObj, slot });
         }
       } else if (target === "fav") {
-        const exists = MY_ROUTES.some(f => f.stopId === stopId);
+        const exists = MY_ROUTES.some(f => f.stopId === stopId && f.routeKey === routeKey);
         if (exists) {
-          MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
+          MY_ROUTES = MY_ROUTES.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
         } else {
           MY_ROUTES.push(newStationObj);
         }
@@ -926,7 +919,7 @@ document.body.addEventListener("click", e => {
       
       if (target === "daily" || target === "fav") fetchEtasForSaved();
 
-      const newSaved = whereSaved(stopId);
+      const newSaved = whereSaved(stopId, routeKey);
       if (target === "daily") {
         const slot = it.dataset.slot;
         it.querySelector(".check").classList.toggle("hidden", !newSaved.daily.includes(slot));
