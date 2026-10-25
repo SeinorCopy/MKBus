@@ -1,1 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巴士 UI (真實數據版)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif;
+    background: #f7f7f5;
+    color: #333;
+    padding: 32px 20px 100px;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-weight: 300;
+  }
 
+  /* ===== 頂部 bar ===== */
+  .top-bar { position: relative; margin-bottom: 24px; text-align: center; }
+  .top-bar h1 { font-size: 18px; font-weight: 400; letter-spacing: 2px; color: #555; }
+  .top-bar .gear {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; color: #bbb; cursor: pointer; transition: color .2s;
+  }
+  .top-bar .gear:hover { color: #333; }
+
+  /* ===== 通用 SVG ===== */
+  .svg-icon {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    display: block;
+  }
+  .svg-icon.sm { width: 16px; height: 16px; }
+  .svg-icon.fill { fill: currentColor; stroke: none; }
+
+  /* ===== 頁面 ===== */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== 搜尋頁面 ===== */
+  .search-area {
+    display: flex; gap: 12px; margin-bottom: 16px;
+    border-bottom: 1px solid #ddd; padding-bottom: 12px; align-items: center;
+  }
+  input {
+    flex: 1; padding: 8px 0; font-size: 16px; font-weight: 300;
+    border: none; background: transparent; outline: none; color: #333; letter-spacing: 1px;
+  }
+  input::placeholder { color: #bbb; }
+  button.search-btn {
+    padding: 8px; background: transparent; color: #999; border: none; cursor: pointer;
+    display: flex; align-items: center; transition: color .2s;
+  }
+  button.search-btn:hover { color: #333; }
+
+  .search-mode {
+    display: flex; gap: 16px; margin-bottom: 16px;
+    font-size: 12px; letter-spacing: 1px;
+  }
+  .search-mode span { color: #bbb; cursor: pointer; transition: color .2s; }
+  .search-mode span.active { color: #333; }
+
+  .quick-routes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .quick-route {
+    padding: 4px 12px; font-size: 12px; letter-spacing: 1px;
+    border: 1px solid #ddd; color: #666; cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .quick-route:hover { border-color: #999; color: #333; }
+
+  .dir-title {
+    font-size: 14px; color: #999; font-weight: 300;
+    letter-spacing: 1px; margin-bottom: 12px;
+  }
+
+  /* ===== 路線搜尋結果卡片 (加入顏色標示) ===== */
+  .route-search-card {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid #eee; cursor: pointer; transition: opacity .2s;
+  }
+  .route-search-card:last-child { border-bottom: none; }
+  .route-search-card:hover { opacity: 0.6; }
+
+  .route-search-left { display: flex; align-items: center; gap: 12px; }
+  
+  /* 路線號碼牌 */
+  .route-badge {
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 18px; font-weight: 600; letter-spacing: 1px;
+    min-width: 64px; text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  /* 顏色定義 (預設無印風灰，有營辦商就變色) */
+  .route-badge.default { background: #eee; color: #666; }
+  
+  .route-badge.kmb { background: #E60012; color: #fff; } /* 九巴紅 */
+  .route-badge.ctb { background: #FDB913; color: #333; } /* 城巴黃 */
+  .route-badge.gmb { background: #00A650; color: #fff; } /* 小巴綠 */
+
+  .route-search-dest { font-size: 14px; color: #999; font-weight: 300; }
+
+  /* ===== 極簡站點列表 ===== */
+  .simple-stop-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid #f2f2f2;
+  }
+  .simple-stop-item:last-child { border-bottom: none; }
+
+  .simple-stop-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+  .simple-stop-name {
+    font-size: 15px; color: #333; font-weight: 300;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stop-code {
+    font-size: 10px; font-family: "SF Mono", "Menlo", monospace;
+    color: #bbb; background: #eee; padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
+  }
+
+  .simple-stop-right {
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: 12px;
+  }
+  .simple-eta {
+    font-size: 16px; font-weight: 400; color: #333; letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .simple-eta .soon { font-size: 14px; color: #333; }
+  .simple-eta .mins { font-size: 13px; color: #888; font-weight: 300; margin-left: 2px; }
+
+  /* ===== 日常/常用頁面大卡片 ===== */
+  .daily-group { margin-bottom: 32px; }
+  .daily-group:last-child { margin-bottom: 0; }
+  
+  .fav-group-title {
+    font-size: 14px; color: #777; font-weight: 400; letter-spacing: 3px;
+    margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;
+    padding-bottom: 8px; border-bottom: 1px solid #ddd;
+  }
+  .fav-group-title .slot-icon { width: 18px; height: 18px; color: #777; flex-shrink: 0; stroke-width: 1.5; }
+  .fav-group-title .now {
+    font-size: 10px; letter-spacing: 1px; color: #777;
+    border: 1px solid #ccc; padding: 0 6px; border-radius: 2px; margin-left: auto;
+  }
+  .fav-group-title .empty { font-size: 11px; letter-spacing: 1px; color: #ccc; margin-left: 4px; border: none; padding: 0; }
+
+  .station-card { padding: 16px 0; border-bottom: 1px solid #eee; }
+  .station-card:last-child { border-bottom: none; }
+
+  .station-title {
+    font-size: 16px; color: #333; font-weight: 400; letter-spacing: 0.5px;
+    margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .station-name-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .station-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .station-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px; }
+  .star-station { width: 20px; height: 20px; color: #ccc; cursor: pointer; transition: color .2s; }
+  .star-station.on { color: #333; }
+
+  .route-list { display: flex; flex-direction: column; gap: 16px; }
+  .route-row { display: flex; flex-direction: column; }
+
+  .route-info-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 12px; }
+  
+  /* 日常/常用卡片入面嘅小路線牌 */
+  .route-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; font-weight: 400; color: #333;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .route-label .route-badge-sm {
+    display: inline-block;
+    padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .route-label .dest { color: #999; font-weight: 300; font-size: 13px; margin-left: 4px; }
+
+  .eta-text { font-size: 14px; font-weight: 400; color: #333; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+  .eta-text .soon { font-weight: 400; }
+  .eta-text .mins { color: #666; font-weight: 300; font-size: 13px; margin-left: 2px; }
+
+  .route-progress-row { display: flex; align-items: center; width: 100%; }
+  .progress-track { display: flex; align-items: center; width: 100%; position: relative; height: 16px; flex: 1; }
+  .progress-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; flex-shrink: 0; z-index: 2; }
+  .progress-dot.end { background: #ddd; }
+  .progress-line-bg { flex: 1; height: 1px; background: #eee; position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); z-index: 1; }
+  .progress-buses { flex: 1; height: 100%; position: relative; margin: 0 6px; }
+  .progress-bus { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; z-index: 3; }
+
+  .route-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 12px; }
+  .icon-btn { width: 18px; height: 18px; color: #ccc; cursor: pointer; transition: color .2s; display: flex; align-items: center; justify-content: center; }
+  .icon-btn:hover { color: #999; }
+  .icon-btn.on { color: #333; }
+
+  /* ===== 常用 ===== */
+  .drag-handle { display: none; width: 18px; height: 18px; color: #ccc; margin-right: 8px; cursor: grab; flex-shrink: 0; }
+  .station-card.editing .drag-handle { display: block; }
+  .station-card.dragging { opacity: 0.4; }
+  .station-card.drag-over { border-top: 2px solid #333; }
+
+  .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .section-head .label { font-size: 12px; color: #bbb; letter-spacing: 3px; text-indent: 3px; }
+  .edit-btn { font-size: 12px; color: #999; letter-spacing: 1px; cursor: pointer; user-select: none; transition: color .2s; }
+  .edit-btn:hover { color: #333; }
+  .edit-btn.done { color: #333; }
+
+  .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
+  .station-card.editing .del-btn { display: block; }
+  .station-card.editing .icon-btn, .station-card.editing .route-progress-row { display: none; }
+
+  /* ===== 歷史記錄 ===== */
+  .history-item {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-left { flex: 1; min-width: 0; }
+  .history-route { font-weight: 400; margin-right: 8px; }
+  .history-dir { color: #999; font-size: 12px; }
+  .history-time { font-size: 11px; color: #bbb; letter-spacing: 0.5px; white-space: nowrap; }
+
+  /* ===== Empty ===== */
+  .empty-state { display: flex; flex-direction: column; align-items: center; padding: 32px 0; color: #ccc; }
+  .empty-state .svg-icon { width: 32px; height: 32px; color: #ddd; margin-bottom: 8px; }
+  .empty-state .text { font-size: 12px; letter-spacing: 1px; color: #bbb; }
+
+  /* ===== 底部 tab ===== */
+  #tabBar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(247,247,245,0.98); border-top: 1px solid #ddd;
+    max-width: 420px; margin: 0 auto; display: flex; z-index: 20;
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 14px 0 16px;
+    font-size: 13px; letter-spacing: 2px; color: #bbb;
+    cursor: pointer; transition: color .2s; position: relative;
+  }
+  .tab.active { color: #333; }
+  .tab .badge { position: absolute; top: 10px; right: 28%; width: 6px; height: 6px; border-radius: 50%; background: #d9534f; display: none; }
+  .tab .badge.show { display: block; }
+
+  /* ===== 設定面板 ===== */
+  #settingsOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 40; }
+  #settingsOverlay.show { display: block; }
+  #settingsPanel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 82%; max-width: 340px;
+    background: #f7f7f5; box-shadow: -2px 0 12px rgba(0,0,0,0.08);
+    padding: 32px 24px; transform: translateX(100%);
+    transition: transform .25s ease; z-index: 41; overflow-y: auto;
+  }
+  #settingsPanel.show { transform: translateX(0); }
+
+  .settings-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
+  .settings-head h2 { font-size: 15px; font-weight: 400; letter-spacing: 3px; color: #555; }
+  .settings-head .close { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #999; cursor: pointer; letter-spacing: 1px; }
+  .settings-head .close:hover { color: #333; }
+
+  .settings-section { font-size: 11px; color: #bbb; letter-spacing: 3px; text-indent: 3px; margin: 24px 0 4px; }
+  .settings-section:first-of-type { margin-top: 0; }
+
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #eee; font-size: 14px; color: #333; }
+  .setting-row .sub { display: block; font-size: 11px; color: #bbb; letter-spacing: 0.5px; margin-top: 2px; }
+  
+  .switch { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #ddd; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+  .switch.on { background: #333; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch.on::after { transform: translateX(16px); }
+
+  .field-row { padding: 12px 0; border-bottom: 1px solid #eee; }
+  .field-row label { display: block; font-size: 12px; color: #999; letter-spacing: 1px; margin-bottom: 4px; }
+  .field-row input { width: 100%; padding: 6px 0; font-size: 14px; font-weight: 300; border: none; background: transparent; outline: none; color: #333; letter-spacing: 1px; font-family: "SF Mono", "Menlo", monospace; }
+  .field-row input::placeholder { color: #ccc; font-family: inherit; }
+  .field-row .hint { font-size: 10px; color: #ccc; letter-spacing: 0.5px; margin-top: 4px; }
+
+  .time-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #666; }
+  .time-row .label { width: 48px; color: #999; letter-spacing: 1px; }
+  .time-row input { width: 48px; padding: 4px; font-size: 14px; font-weight: 300; border: 1px solid #ddd; background: transparent; outline: none; color: #333; text-align: center; font-variant-numeric: tabular-nums; }
+  .time-row .sep { color: #ccc; }
+
+  /* 匯出匯入 */
+  .backup-btn {
+    display: block; width: 100%; padding: 12px 0; margin-top: 8px;
+    background: transparent; border: 1px solid #ddd; color: #333;
+    font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: border-color .2s;
+  }
+  .backup-btn:hover { border-color: #999; }
+  .backup-textarea {
+    width: 100%; height: 80px; padding: 10px; margin-top: 8px;
+    border: 1px solid #ddd; background: #fff; font-size: 12px;
+    font-family: "SF Mono", "Menlo", monospace; color: #666;
+    resize: none; outline: none;
+  }
+
+  /* ===== Toast ===== */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #333; color: #fff; font-size: 13px; letter-spacing: 1px;
+    padding: 10px 20px; opacity: 0; transition: opacity .3s, transform .3s;
+    pointer-events: none; z-index: 60; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== 星掣選單 ===== */
+  .star-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 200px; }
+  .star-menu .menu-title { padding: 10px 16px 6px; font-size: 10px; letter-spacing: 2px; color: #bbb; border-bottom: 1px solid #eee; }
+  .star-menu .item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; }
+  .star-menu .item:last-child { border-bottom: none; }
+  .star-menu .item:hover { background: #f7f7f5; }
+  .star-menu .item .svg-icon { width: 14px; height: 14px; color: #999; flex-shrink: 0; }
+  .star-menu .item .check { margin-left: auto; width: 14px; height: 14px; color: #333; }
+  .star-menu .item .check.hidden { visibility: hidden; }
+  .star-menu .item.cancel { color: #999; justify-content: center; font-size: 12px; letter-spacing: 1px; }
+
+  /* 推送選單 (簡化版) */
+  .push-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 180px; }
+  .push-menu .item { padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; text-align: center; }
+  .push-menu .item:last-child { border-bottom: none; }
+  .push-menu .item:hover { background: #f7f7f5; }
+
+  /* Loading Overlay */
+  #loadingOverlay {
+    position: fixed; inset: 0; background: rgba(247,247,245,0.9); z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #555; font-size: 14px; letter-spacing: 1px;
+  }
+  #loadingOverlay.hide { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingOverlay">正在載入全港路線及站點資料...</div>
+
+<div class="top-bar">
+  <h1 id="pageTitle">日 常</h1>
+  <svg class="gear" id="gearBtn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</div>
+
+<div class="page active" id="pageDaily">
+  <div id="dailyGroups"></div>
+</div>
+
+<div class="page" id="pageSearch">
+  <div class="search-mode">
+    <span class="active" data-mode="route">路線</span>
+    <span data-mode="stop">站點</span>
+  </div>
+  <div class="search-area">
+    <input id="searchInput" placeholder="輸入路線號碼" />
+    <button class="search-btn" id="searchBtn" title="搜尋">
+      <svg class="svg-icon" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+      </svg>
+    </button>
+  </div>
+  <div class="quick-routes" id="quickRoutes"></div>
+  
+  <div id="searchResultsContainer"></div>
+</div>
+
+<div class="page" id="pageFav">
+  <div class="section-head">
+    <span class="label">我 的 站 點</span>
+    <span class="edit-btn" id="editBtn">編輯</span>
+  </div>
+  <div id="favList"></div>
+
+  <div class="section-head" style="margin-top:32px;">
+    <span class="label">歷 史 記 錄</span>
+    <span class="edit-btn" id="clearHistory">清除</span>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<div id="tabBar">
+  <div class="tab active" data-page="pageDaily" data-title="日 常">日 常<span class="badge" id="dailyBadge"></span></div>
+  <div class="tab" data-page="pageSearch" data-title="搜 尋">搜 尋</div>
+  <div class="tab" data-page="pageFav" data-title="常 用">常 用</div>
+</div>
+
+<div id="settingsOverlay"></div>
+<div id="settingsPanel">
+  <div class="settings-head">
+    <h2>設 定</h2>
+    <span class="close" id="closeSettings">
+      關閉
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </span>
+  </div>
+
+  <div class="settings-section">顯 示</div>
+  <div class="setting-row">
+    <div>自動刷新<span class="sub">每 30 秒更新到站時間</span></div>
+    <div class="switch on" data-setting="auto"></div>
+  </div>
+  <div class="setting-row">
+    <div>當前時段置頂<span class="sub">日常頁按時間自動排序</span></div>
+    <div class="switch on" data-setting="pin"></div>
+  </div>
+  <div class="setting-row">
+    <div>顯示「即將到站」<span class="sub">關閉後只顯示分鐘數</span></div>
+    <div class="switch on" data-setting="soon"></div>
+  </div>
+
+  <div class="settings-section">時 段 範 圍</div>
+  <div class="time-row"><span class="label">早上</span><input id="tMorning" value="06" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <input id="tNoon" value="12" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span></div>
+  <div class="time-row"><span class="label">中午</span><input id="tNoon2" value="12" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <input id="tEvening" value="18" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span></div>
+  <div class="time-row"><span class="label">晚上</span><input id="tEvening2" value="18" maxlength="2" /> <span class="sep">:</span> <span class="sep">00</span> — <span style="color:#999;">翌日 <span id="tMorning2">06</span>:00</span></div>
+
+  <div class="settings-section">推 送 通 知（Pushover）</div>
+  <div class="field-row">
+    <label>API Token</label>
+    <input type="text" id="poToken" placeholder="輸入 Pushover API Token" />
+    <div class="hint">pushover.net 註冊 app 後取得</div>
+  </div>
+  <div class="field-row">
+    <label>User Key</label>
+    <input type="text" id="poUser" placeholder="輸入 Pushover User Key" />
+    <div class="hint">Pushover 帳戶主頁可見</div>
+  </div>
+  <div class="setting-row" style="border-bottom:none;">
+    <div>啟用推送<span class="sub">巴士線旁顯示推送掣</span></div>
+    <div class="switch" data-setting="push"></div>
+  </div>
+
+  <div class="settings-section">備 份 與 還 原</div>
+  <button class="backup-btn" id="exportBtn">匯出設定 (複製 JSON)</button>
+  <div style="margin-top: 12px;">
+    <button class="backup-btn" id="importBtn">匯入設定</button>
+    <textarea class="backup-textarea" id="importArea" placeholder="貼上你嘅備份 JSON..."></textarea>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { fetchEtaDb, fetchEtas } from 'https://esm.sh/hk-bus-eta@3.8.4';
+
+// ===== SVG =====
+const SVG = {
+  bell: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  star: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+  starFill: `<svg class="svg-icon fill" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+  drag: `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>`,
+  x: `<svg class="svg-icon" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
+  check: `<svg class="svg-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+  morning: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/><polyline points="8 6 12 2 16 6"/></svg>`,
+  noon: `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  evening: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/><path d="M18.5 4.5L19 3l.5 1.5L21 5l-1.5.5L19 7l-.5-1.5L17 5l1.5-.5z"/></svg>`,
+  bus: `<svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="14" rx="2"/><line x1="4" y1="11" x2="20" y2="11"/><circle cx="8" cy="20" r="1.5"/><circle cx="16" cy="20" r="1.5"/></svg>`,
+};
+
+// ===== 全局變量 =====
+let etaDb = null;
+let DAILY_FAVS = JSON.parse(localStorage.getItem("muji_daily_favs") || "[]");
+let MY_ROUTES = JSON.parse(localStorage.getItem("muji_favs") || "[]");
+let MOCK_HISTORY = JSON.parse(localStorage.getItem("muji_history") || "[]");
+let QUICK_ROUTES = JSON.parse(localStorage.getItem("muji_quick_routes") || '["40", "1A", "968"]');
+
+const SLOT_NAMES = { morning: "早 上", noon: "中 午", evening: "晚 上" };
+const SLOT_ICONS = { morning: SVG.morning, noon: SVG.noon, evening: SVG.evening };
+const SLOT_ORDER = ["morning", "noon", "evening"];
+const settings = { auto: true, pin: true, soon: true, push: false, poToken: "", poUser: "" };
+let slotHours = { morning: 6, noon: 12, evening: 18 };
+
+const savedSettings = JSON.parse(localStorage.getItem("muji_settings") || "{}");
+Object.assign(settings, savedSettings);
+
+function saveStorage() {
+  localStorage.setItem("muji_daily_favs", JSON.stringify(DAILY_FAVS));
+  localStorage.setItem("muji_favs", JSON.stringify(MY_ROUTES));
+  localStorage.setItem("muji_history", JSON.stringify(MOCK_HISTORY));
+  localStorage.setItem("muji_quick_routes", JSON.stringify(QUICK_ROUTES));
+  localStorage.setItem("muji_settings", JSON.stringify(settings));
+}
+
+function currentSlot() {
+  const h = new Date().getHours();
+  if (h >= slotHours.morning && h < slotHours.noon) return "morning";
+  if (h >= slotHours.noon && h < slotHours.evening) return "noon";
+  return "evening";
+}
+
+// ===== 營辦商標籤 Helper =====
+function getCompanyClass(co) {
+  if (!co) return 'default';
+  const c = co.toLowerCase();
+  if (c === 'kmb') return 'kmb';
+  if (c === 'ctb' || c === 'nwfb') return 'ctb';
+  if (c === 'gmb') return 'gmb';
+  return 'default';
+}
+function getCompanyName(co) {
+  if (!co) return '';
+  const c = co.toLowerCase();
+  if (c === 'kmb') return '九巴';
+  if (c === 'ctb' || c === 'nwfb') return '城巴';
+  if (c === 'gmb') return '小巴';
+  return co.toUpperCase();
+}
+
+// ===== 渲染進度條 & ETA =====
+function renderProgressBar(etas) {
+  if (!etas || etas.length === 0) return "";
+  const maxMin = 45;
+  const sortedEtas = [...etas].filter(m => m !== null).sort((a, b) => a - b);
+  let busHtml = "";
+  let lastPos = -999;
+
+  sortedEtas.forEach((min, index) => {
+    let pos;
+    if (min <= 0) pos = 5 + (index * 7); 
+    else pos = Math.max(10, (min / maxMin) * 100);
+    if (pos < lastPos + 8) pos = lastPos + 8;
+    lastPos = pos;
+    busHtml += `<svg class="progress-bus" style="left: ${pos}%;" viewBox="0 0 24 24" fill="${min <= 0 ? '#333' : min <= 5 ? '#555' : min <= 15 ? '#888' : min <= 30 ? '#bbb' : '#ddd'}"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z"/></svg>`;
+  });
+
+  return `
+    <div class="progress-track">
+      <div class="progress-dot"></div>
+      <div class="progress-line-bg"></div>
+      <div class="progress-buses">${busHtml}</div>
+      <div class="progress-dot end"></div>
+    </div>
+  `;
+}
+
+function renderEtaHtml(etas) {
+  if (!etas || etas.length === 0) return `<div class="eta-text" style="color:#ccc;">沒有實時數據</div>`;
+  let textHtml = etas.map(m => {
+    if (m === null) return `<span class="soon">-</span>`;
+    if (m <= 0) {
+      if (settings.soon) return `<span class="soon">即將到站</span>`;
+      return `0 分鐘`;
+    }
+    return `${m} <span class="mins">分</span>`;
+  }).join(" · ");
+  return `<div class="eta-text">${textHtml}</div>`;
+}
+
+function whereSaved(stopId) {
+  const daily = DAILY_FAVS.filter(f => f.stopId === stopId).map(f => f.slot);
+  const fav = MY_ROUTES.some(f => f.stopId === stopId);
+  return { daily, fav };
+}
+
+// ===== 核心數據獲取 =====
+async function fetchRealEtas(station) {
+  try {
+    const routeData = etaDb.routeList[station.routeKey];
+    if (!routeData) return;
+    
+    const etas = await fetchEtas({
+      ...routeData,
+      seq: station.seq,
+      language: "zh"
+    });
+
+    const now = Date.now();
+    station.routes = [{
+      route: routeData.route,
+      dest: routeData.dest.zh,
+      co: routeData.co,
+      etas: etas.map(e => {
+        if (!e.eta) return null;
+        const diff = Math.round((new Date(e.eta).getTime() - now) / 60000);
+        return diff < 0 ? 0 : diff;
+      })
+    }];
+    
+    if (document.getElementById("pageDaily").classList.contains("active")) renderDaily();
+    if (document.getElementById("pageFav").classList.contains("active")) renderFav();
+
+  } catch (e) {
+    console.error("ETA Fetch 失敗", e);
+  }
+}
+
+// ===== 渲染大卡片 =====
+function renderStationCard(station, isEditing) {
+  let routesHtml = station.routes.map(r => {
+    const coClass = getCompanyClass(r.co);
+    const badgeStyle = coClass !== 'default' ? `background: var(--color-${coClass}); color: #fff;` : '';
+    
+    return `
+    <div class="route-row">
+      <div class="route-info-row">
+        <div class="route-label">
+          <span class="route-badge-sm ${coClass}" style="${coClass === 'ctb' ? 'color:#333;' : ''}">${r.route}</span>
+          <span class="dest">往 ${r.dest}</span>
+        </div>
+        ${renderEtaHtml(r.etas)}
+      </div>
+      <div class="route-progress-row">
+        <div style="flex:1;">${renderProgressBar(r.etas)}</div>
+        ${settings.push ? `<span class="icon-btn push-btn" data-push="route-${r.route}" data-all-etas="${(r.etas||[]).join(',')}" title="推送通知">${SVG.bell}</span>` : ""}
+      </div>
+    </div>
+  `}).join("");
+
+  let starHtml = isEditing ? "" : `
+    <span class="star-station" data-stop-id="${station.stopId}" data-stop-name="${station.stopName}" data-route-key="${station.routeKey}" data-seq="${station.seq}" title="收藏此站">${SVG.star}</span>
+  `;
+  let dragHtml = isEditing ? `<span class="drag-handle">${SVG.drag}</span>` : "";
+  let delHtml = isEditing ? `<span class="del-btn" data-del="${station.stopId}-${station.seq}">${SVG.x}</span>` : "";
+  let editClass = isEditing ? "editing" : "";
+
+  return `
+    <div class="station-card ${editClass}" data-id="${station.stopId}-${station.seq}" draggable="${isEditing}">
+      <div class="station-title">
+        <div class="station-name-wrap">
+          ${dragHtml}${delHtml}
+          <span class="station-name">${station.stopName}</span>
+          ${station.stopCode ? `<span class="stop-code">${station.stopCode}</span>` : ""}
+        </div>
+        <div class="station-actions">${starHtml}</div>
+      </div>
+      <div class="route-list">${routesHtml}</div>
+    </div>
+  `;
+}
+
+// ===== 日常 =====
+function renderDaily() {
+  const nowSlot = currentSlot();
+  const order = settings.pin ? [nowSlot, ...SLOT_ORDER.filter(s => s !== nowSlot)] : SLOT_ORDER;
+
+  let html = "";
+  order.forEach(slot => {
+    const items = DAILY_FAVS.filter(f => f.slot === slot);
+    const isNow = slot === nowSlot;
+    
+    html += `<div class="daily-group">`;
+    html += `<div class="fav-group-title">
+      <span class="slot-icon">${SLOT_ICONS[slot]}</span>
+      <span>${SLOT_NAMES[slot]}</span>
+      ${isNow && settings.pin ? '<span class="now">現在</span>' : ""}
+      ${items.length === 0 ? '<span class="empty">— 未有收藏</span>' : ""}
+    </div>`;
+    items.forEach(f => { html += renderStationCard(f, false); });
+    html += `</div>`;
+  });
+  document.getElementById("dailyGroups").innerHTML = html;
+  updateStarState();
+}
+
+// ===== 常用 =====
+function renderFav() {
+  const el = document.getElementById("favList");
+  if (MY_ROUTES.length === 0) {
+    el.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">未有站點，撳下面加</div></div>`;
+    return;
+  }
+  el.innerHTML = MY_ROUTES.map(f => renderStationCard(f, editing)).join("");
+  applyEditMode();
+}
+
+// 更新星號狀態
+function updateStarState() {
+  document.querySelectorAll(".star-station").forEach(btn => {
+    const stopId = btn.dataset.stopId;
+    if (!stopId) return;
+    const saved = whereSaved(stopId);
+    const has = saved.daily.length > 0 || saved.fav;
+    btn.classList.toggle("on", has);
+    btn.innerHTML = has ? SVG.starFill : SVG.star;
+  });
+}
+
+function updateBadge() {
+  const nowSlot = currentSlot();
+  const has = DAILY_FAVS.some(f => f.slot === nowSlot);
+  document.getElementById("dailyBadge").classList.toggle("show", has);
+}
+
+// ===== 歷史 =====
+function renderHistory() {
+  const el = document.getElementById("historyList");
+  if (MOCK_HISTORY.length === 0) {
+    el.innerHTML = `<div class="fav-group-title"><span class="empty">— 暫無記錄</span></div>`;
+    return;
+  }
+  el.innerHTML = MOCK_HISTORY.map(h => `
+    <div class="history-item">
+      <span class="history-left"><span class="history-route">${h.route}</span><span class="history-dir">${h.dest}</span></span>
+      <span class="history-time">${h.time}</span>
+    </div>
+  `).join("");
+}
+
+// ===== Tab 切換 =====
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.page).classList.add("active");
+    document.getElementById("pageTitle").textContent = tab.dataset.title;
+    if (tab.dataset.page !== "pageFav") exitEditMode();
+  };
+});
+
+// ===== 設定 =====
+const overlay = document.getElementById("settingsOverlay");
+const panel = document.getElementById("settingsPanel");
+function openSettings() { overlay.classList.add("show"); panel.classList.add("show"); }
+function closeSettings() { overlay.classList.remove("show"); panel.classList.remove("show"); }
+document.getElementById("gearBtn").onclick = openSettings;
+document.getElementById("closeSettings").onclick = closeSettings;
+overlay.onclick = closeSettings;
+
+document.querySelectorAll(".switch[data-setting]").forEach(sw => {
+  sw.onclick = () => {
+    const key = sw.dataset.setting;
+    settings[key] = !settings[key];
+    sw.classList.toggle("on", settings[key]);
+    saveStorage();
+    if (["pin", "push", "soon"].includes(key)) { renderDaily(); renderFav(); }
+  };
+});
+
+document.getElementById("poToken").oninput = e => { settings.poToken = e.target.value; saveStorage(); };
+document.getElementById("poUser").oninput = e => { settings.poUser = e.target.value; saveStorage(); };
+
+// 匯出/匯入
+document.getElementById("exportBtn").onclick = () => {
+  const data = { daily: DAILY_FAVS, fav: MY_ROUTES, settings: settings, slots: slotHours, quick: QUICK_ROUTES };
+  navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => showToast("已複製備份"));
+};
+document.getElementById("importBtn").onclick = () => {
+  try {
+    const data = JSON.parse(document.getElementById("importArea").value);
+    if (data.daily) DAILY_FAVS = data.daily;
+    if (data.fav) MY_ROUTES = data.fav;
+    if (data.settings) Object.assign(settings, data.settings);
+    if (data.quick) QUICK_ROUTES = data.quick;
+    saveStorage();
+    renderDaily(); renderFav(); renderHistory(); resetSearchPage();
+    document.getElementById("importArea").value = "";
+    showToast("匯入成功！");
+    closeSettings();
+  } catch (e) { showToast("格式錯誤"); }
+};
+
+// ===== 編輯模式 (常用) =====
+let editing = false;
+const editBtn = document.getElementById("editBtn");
+
+function applyEditMode() {
+  document.querySelectorAll("#favList .station-card").forEach(item => {
+    item.classList.toggle("editing", editing);
+    item.draggable = editing;
+  });
+  editBtn.textContent = editing ? "完成" : "編輯";
+  editBtn.classList.toggle("done", editing);
+  if (editing) bindDrag();
+}
+
+function exitEditMode() { editing = false; if (editBtn) applyEditMode(); }
+
+editBtn.onclick = () => { editing = !editing; renderFav(); };
+
+document.getElementById("favList").addEventListener("click", e => {
+  const del = e.target.closest("[data-del]");
+  if (!del) return;
+  const id = del.dataset.del;
+  MY_ROUTES = MY_ROUTES.filter(f => `${f.stopId}-${f.seq}` !== id);
+  saveStorage(); renderFav(); updateStarState();
+});
+
+let dragSrc = null;
+function bindDrag() {
+  const items = document.querySelectorAll("#favList .station-card");
+  items.forEach(item => {
+    item.addEventListener("dragstart", e => { dragSrc = item; item.classList.add("dragging"); });
+    item.addEventListener("dragend", () => { item.classList.remove("dragging"); items.forEach(i => i.classList.remove("drag-over")); });
+    item.addEventListener("dragover", e => { e.preventDefault(); if (item !== dragSrc) item.classList.add("drag-over"); });
+    item.addEventListener("dragleave", () => item.classList.remove("drag-over"));
+    item.addEventListener("drop", e => {
+      e.preventDefault(); item.classList.remove("drag-over");
+      if (!dragSrc || item === dragSrc) return;
+      const srcId = dragSrc.dataset.id, dstId = item.dataset.id;
+      const srcIdx = MY_ROUTES.findIndex(f => `${f.stopId}-${f.seq}` === srcId);
+      const dstIdx = MY_ROUTES.findIndex(f => `${f.stopId}-${f.seq}` === dstId);
+      if (srcIdx < 0 || dstIdx < 0) return;
+      const [moved] = MY_ROUTES.splice(srcIdx, 1);
+      MY_ROUTES.splice(dstIdx, 0, moved);
+      saveStorage(); renderFav();
+    });
+  });
+}
+
+// ===== 真實搜尋邏輯 =====
+function renderQuickRoutes() {
+  document.getElementById("quickRoutes").innerHTML = QUICK_ROUTES.map(r => 
+    `<span class="quick-route" data-route="${r}">${r}</span>`
+  ).join("");
+  document.querySelectorAll(".quick-route").forEach(el => {
+    el.onclick = () => { document.getElementById("searchInput").value = el.dataset.route; performSearch(); };
+  });
+}
+
+function resetSearchPage() {
+  document.getElementById("searchResultsContainer").innerHTML = `
+    <div class="dir-title">最近搜尋</div>
+    <div id="quickRoutes" class="quick-routes"></div>
+  `;
+  renderQuickRoutes();
+}
+
+function performSearch() {
+  const query = document.getElementById("searchInput").value.trim().toUpperCase();
+  if (!query) return;
+
+  if (!QUICK_ROUTES.includes(query)) {
+    QUICK_ROUTES.unshift(query);
+    if (QUICK_ROUTES.length > 5) QUICK_ROUTES.pop();
+    saveStorage();
+  }
+
+  if (!etaDb) { showToast("數據庫載入中..."); return; }
+
+  const container = document.getElementById("searchResultsContainer");
+  
+  const routeKeys = Object.keys(etaDb.routeList);
+  const results = routeKeys.filter(key => {
+    return etaDb.routeList[key].route.toUpperCase().includes(query);
+  });
+
+  if (results.length === 0) {
+    container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到路線 ${query}</div></div>`;
+    return;
+  }
+
+  // 排序：先按路線號碼，再按公司
+  results.sort((a, b) => {
+    const ra = etaDb.routeList[a].route;
+    const rb = etaDb.routeList[b].route;
+    if (ra !== rb) return ra.localeCompare(rb, undefined, { numeric: true });
+    return (etaDb.routeList[a].co || '').localeCompare(etaDb.routeList[b].co || '');
+  });
+
+  container.innerHTML = `<div class="dir-title">搜尋結果 (${results.length})</div>`;
+  
+  results.forEach(key => {
+    const routeData = etaDb.routeList[key];
+    const coClass = getCompanyClass(routeData.co);
+    const coName = getCompanyName(routeData.co);
+    
+    const div = document.createElement("div");
+    div.className = "route-search-card";
+    div.innerHTML = `
+      <div class="route-search-left">
+        <div class="route-badge ${coClass}">${routeData.route}</div>
+        <span class="route-search-dest">往 ${routeData.dest.zh}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; color:#999; letter-spacing:1px;">${coName}</span>
+        <svg class="svg-icon sm" viewBox="0 0 24 24" style="color:#ccc;"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    `;
+    div.onclick = () => renderRouteStops(key);
+    container.appendChild(div);
+  });
+}
+
+// 撳路線後，展開站點列表
+async function renderRouteStops(routeKey) {
+  const container = document.getElementById("searchResultsContainer");
+  const routeData = etaDb.routeList[routeKey];
+  
+  let html = `
+    <div class="back-btn" style="margin-bottom: 16px; font-size: 13px; color: #999; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="window.resetSearchPage()">
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      返回路線列表
+    </div>
+    <div class="dir-title">${routeData.route} 往 ${routeData.dest.zh}</div>
+    <div id="stopListContainer"><div style="text-align:center; padding:20px; color:#999;">載入站點及實時數據中...</div></div>
+  `;
+  container.innerHTML = html;
+
+  const stopListEl = document.getElementById("stopListContainer");
+  let stopHtml = "";
+
+  for (let i = 0; i < routeData.stops.length; i++) {
+    const stopId = routeData.stops[i];
+    const stopInfo = etaDb.stopList[stopId];
+    
+    const etas = await fetchEtas({ ...routeData, seq: i, language: "zh" });
+    const now = Date.now();
+    const mins = etas.map(e => e.eta ? Math.round((new Date(e.eta).getTime() - now) / 60000) : null);
+
+    stopHtml += `
+      <div class="simple-stop-item">
+        <div class="simple-stop-left">
+          <span class="simple-stop-name">${stopInfo.name.zh}</span>
+          ${stopInfo.code ? `<span class="stop-code">${stopInfo.code}</span>` : ""}
+        </div>
+        <div class="simple-stop-right">
+          <div class="simple-eta">${renderEtaHtml(mins).replace('<div class="eta-text">','').replace('</div>','')}</div>
+          <span class="star-station" data-stop-id="${stopId}" data-stop-name="${stopInfo.name.zh}" data-route-key="${routeKey}" data-seq="${i}" style="width:18px;height:18px;" title="收藏此站">${SVG.star}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  stopListEl.innerHTML = stopHtml;
+  updateStarState();
+}
+
+window.resetSearchPage = resetSearchPage;
+
+document.getElementById("searchBtn").onclick = performSearch;
+document.getElementById("searchInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") performSearch();
+});
+
+// ===== 星掣選單 =====
+document.body.addEventListener("click", e => {
+  const btn = e.target.closest(".star-station");
+  if (!btn) return;
+  e.stopPropagation();
+  
+  const stopId = btn.dataset.stopId;
+  const stopName = btn.dataset.stopName;
+  const routeKey = btn.dataset.routeKey;
+  const seq = Number(btn.dataset.seq);
+  
+  if (document.querySelector(".star-menu")) {
+    document.querySelectorAll(".star-menu").forEach(m => m.remove());
+    return;
+  }
+
+  const saved = whereSaved(stopId);
+  const hasAny = saved.daily.length > 0 || saved.fav;
+
+  document.querySelectorAll(".push-menu").forEach(m => m.remove());
+
+  const rect = btn.getBoundingClientRect();
+  const menu = document.createElement("div");
+  menu.className = "star-menu";
+  menu.style.top = (rect.bottom + 6) + "px";
+  menu.style.left = Math.max(8, Math.min(rect.left - 150, window.innerWidth - 210)) + "px";
+
+  const item = (slot, icon, label, checked) => `
+    <div class="item" data-target="daily" data-slot="${slot}">
+      ${icon}
+      <span>${label}</span>
+      <span class="check ${checked ? "" : "hidden"}">${SVG.check}</span>
+    </div>`;
+
+  menu.innerHTML = `
+    <div class="menu-title">${hasAny ? "已 收 藏 — 可 多 選" : "收 藏 此 站"}</div>
+    ${item("morning", SVG.morning, "日常 · 早上", saved.daily.includes("morning"))}
+    ${item("noon", SVG.noon, "日常 · 中午", saved.daily.includes("noon"))}
+    ${item("evening", SVG.evening, "日常 · 晚上", saved.daily.includes("evening"))}
+    <div class="item" data-target="fav">
+      ${SVG.bus}
+      <span>常用</span>
+      <span class="check ${saved.fav ? "" : "hidden"}">${SVG.check}</span>
+    </div>
+    ${hasAny ? `<div class="item" data-target="remove-all" style="color:#d9534f;justify-content:center;font-size:12px;letter-spacing:1px;">全部取消收藏</div>` : ""}
+    <div class="item cancel">完成</div>
+  `;
+  document.body.appendChild(menu);
+
+  menu.querySelectorAll(".item").forEach(it => {
+    it.onclick = ev => {
+      ev.stopPropagation();
+      if (it.classList.contains("cancel")) { menu.remove(); return; }
+
+      const target = it.dataset.target;
+      const routeData = etaDb.routeList[routeKey];
+      const stopInfo = etaDb.stopList[stopId];
+
+      const newStationObj = {
+        stopId, stopName, routeKey, seq,
+        stopCode: stopInfo.code || "",
+        routes: [{ route: routeData.route, dest: routeData.dest.zh, co: routeData.co, etas: [] }]
+      };
+
+      if (target === "remove-all") {
+        DAILY_FAVS = DAILY_FAVS.filter(f => f.stopId !== stopId);
+        MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
+      } else if (target === "daily") {
+        const slot = it.dataset.slot;
+        const exists = DAILY_FAVS.some(f => f.stopId === stopId && f.slot === slot);
+        if (exists) {
+          DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.slot === slot));
+        } else {
+          DAILY_FAVS.push({ ...newStationObj, slot });
+        }
+      } else if (target === "fav") {
+        const exists = MY_ROUTES.some(f => f.stopId === stopId);
+        if (exists) {
+          MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
+        } else {
+          MY_ROUTES.push(newStationObj);
+        }
+      }
+
+      saveStorage();
+      renderDaily(); renderFav(); updateBadge(); updateStarState();
+      
+      if (target === "daily" || target === "fav") fetchEtasForSaved();
+
+      const newSaved = whereSaved(stopId);
+      if (target === "daily") {
+        const slot = it.dataset.slot;
+        it.querySelector(".check").classList.toggle("hidden", !newSaved.daily.includes(slot));
+      } else if (target === "fav") {
+        it.querySelector(".check").classList.toggle("hidden", !newSaved.fav);
+      }
+    };
+  });
+
+  setTimeout(() => {
+    const close = ev => {
+      if (!menu.contains(ev.target) && !ev.target.closest(".star-station")) { 
+        menu.remove(); 
+        document.removeEventListener("click", close); 
+      }
+    };
+    document.addEventListener("click", close);
+  }, 0);
+});
+
+// ===== 推送 =====
+document.body.addEventListener("click", e => {
+  const btn = e.target.closest(".push-btn");
+  if (!btn) return;
+  e.stopPropagation();
+  if (!settings.push) { showToast("請先在設定中啟用推送"); return; }
+  if (!settings.poToken || !settings.poUser) { showToast("請先輸入 Pushover Token / Key"); return; }
+
+  const etaStr = btn.dataset.allEtas || "";
+  const allEtas = etaStr.split(",").map(Number).filter(n => !isNaN(n));
+  const etaMsg = allEtas.map(m => m <= 0 ? "即將到站" : `${m} 分鐘`).join(" · ");
+  
+  sendPushoverNotification(`🚌 巴士到站資訊`, `目前到站時間：${etaMsg}`);
+  showToast(`🔔 已即時發送通知`);
+});
+
+function sendPushoverNotification(title, msg) {
+  console.log(`[Pushover] ${title} - ${msg}`);
+}
+
+// ===== Toast =====
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ===== 自動刷新 =====
+async function fetchEtasForSaved() {
+  for (let st of DAILY_FAVS) { await fetchRealEtas(st); }
+  for (let st of MY_ROUTES) { await fetchRealEtas(st); }
+  updateBadge();
+}
+
+setInterval(() => {
+  if (!settings.auto) return;
+  fetchEtasForSaved();
+}, 30000);
+
+// ===== 啟動 =====
+async function initApp() {
+  try {
+    etaDb = await fetchEtaDb();
+    document.getElementById("loadingOverlay").classList.add("hide");
+
+    renderDaily();
+    renderFav();
+    renderHistory();
+    resetSearchPage();
+    updateBadge();
+
+    document.querySelectorAll(".switch[data-setting]").forEach(sw => {
+      sw.classList.toggle("on", settings[sw.dataset.setting]);
+    });
+    document.getElementById("poToken").value = settings.poToken || "";
+    document.getElementById("poUser").value = settings.poUser || "";
+
+    fetchEtasForSaved();
+
+  } catch (err) {
+    document.getElementById("loadingOverlay").textContent = "載入失敗，請重新整理網頁";
+    console.error(err);
+  }
+}
+
+initApp();
+</script>
+
+</body>
+</html>
