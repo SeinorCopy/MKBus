@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>無印巴士</title>
+<title>MK牛交通</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 
@@ -87,23 +87,21 @@
   .icon-btn { width: 18px; height: 18px; color: #ccc; cursor: pointer; transition: color .2s; display: flex; align-items: center; justify-content: center; }
   .icon-btn.on { color: #333; }
   
-  /* 日常頁編輯模式 */
-  .station-card.editing .route-progress-row { display: none; }
-  .edit-station-btn { display: none; font-size: 12px; color: #007aff; cursor: pointer; letter-spacing: 1px; border: 1px solid #007aff; padding: 2px 8px; border-radius: 4px; }
-  .station-card.editing .edit-station-btn { display: inline-block; }
-  .station-card.editing .star-station { display: none; }
-
+  /* 編輯模式 (日常 & 常用共用) */
   .drag-handle { display: none; width: 18px; height: 18px; color: #ccc; margin-right: 8px; cursor: grab; flex-shrink: 0; }
+  .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
   .station-card.editing .drag-handle { display: block; }
+  .station-card.editing .del-btn { display: block; }
+  .station-card.editing .icon-btn { display: none; }
+  .station-card.editing .route-progress-row { display: none; }
   .station-card.dragging { opacity: 0.4; }
   .station-card.drag-over { border-top: 2px solid #333; }
+
   .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .section-head .label { font-size: 12px; color: #bbb; letter-spacing: 3px; text-indent: 3px; }
   .edit-btn { font-size: 12px; color: #999; letter-spacing: 1px; cursor: pointer; user-select: none; transition: color .2s; }
   .edit-btn.done { color: #333; }
-  .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
-  .station-card.editing .del-btn { display: block; }
-  .station-card.editing .icon-btn { display: none; }
+  
   .history-item { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333; cursor: pointer; }
   .history-item:last-child { border-bottom: none; }
   .history-left { flex: 1; min-width: 0; }
@@ -139,33 +137,15 @@
   .backup-textarea { width: 100%; height: 80px; padding: 10px; margin-top: 8px; border: 1px solid #ddd; background: #fff; font-size: 12px; font-family: "SF Mono", "Menlo", monospace; color: #666; resize: none; outline: none; }
   #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; font-size: 13px; letter-spacing: 1px; padding: 10px 20px; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 60; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  
-  /* 編輯選單 */
-  .edit-menu {
-    position: fixed;
-    background: #fff; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    z-index: 50; min-width: 260px; border-radius: 8px; overflow: hidden;
-  }
-  .edit-menu .menu-title { padding: 12px 16px; font-size: 13px; font-weight: 400; color: #333; border-bottom: 1px solid #eee; background: #f9f9f9; }
-  .edit-menu .menu-route-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; border-bottom: 1px solid #f2f2f2; font-size: 14px; flex-wrap: wrap; gap: 8px;
-  }
-  .edit-menu .menu-route-row:last-child { border-bottom: none; }
-  .edit-menu .menu-route-left { display: flex; align-items: center; gap: 8px; font-weight: 400; }
-  .edit-menu .menu-action-btn {
-    font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer;
-    border: 1px solid #ccc; background: transparent; color: #333;
-  }
-  .edit-menu .menu-action-btn.danger { color: #d9534f; border-color: #d9534f; }
-  .edit-menu .menu-action-btn:hover { background: #f0f0f0; }
-  .edit-menu .menu-action-btn.danger:hover { background: #fff0f0; }
-  .edit-menu .menu-footer {
-    padding: 12px 16px; text-align: center; font-size: 12px; color: #999;
-    border-top: 1px solid #eee; cursor: pointer;
-  }
-  .edit-menu .menu-footer:hover { background: #f9f9f9; color: #d9534f; }
-
+  .star-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 200px; }
+  .star-menu .menu-title { padding: 10px 16px 6px; font-size: 10px; letter-spacing: 2px; color: #bbb; border-bottom: 1px solid #eee; }
+  .star-menu .item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; }
+  .star-menu .item:last-child { border-bottom: none; }
+  .star-menu .item:hover { background: #f7f7f5; }
+  .star-menu .item .svg-icon { width: 14px; height: 14px; color: #999; flex-shrink: 0; }
+  .star-menu .item .check { margin-left: auto; width: 14px; height: 14px; color: #333; }
+  .star-menu .item .check.hidden { visibility: hidden; }
+  .star-menu .item.cancel { color: #999; justify-content: center; font-size: 12px; letter-spacing: 1px; }
   #loadingOverlay { position: fixed; inset: 0; background: rgba(247,247,245,0.9); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 14px; letter-spacing: 1px; }
   #loadingOverlay.hide { display: none; }
 </style>
@@ -184,7 +164,7 @@
 
 <div class="page active" id="pageDaily">
   <div class="section-head">
-    <span class="label">日 常 收 藏</span>
+    <span class="label">MK牛交通 · 日 常</span>
     <span class="edit-btn" id="dailyEditBtn">編輯</span>
   </div>
   <div id="dailyGroups"></div>
@@ -213,7 +193,7 @@
 
 <div class="page" id="pageFav">
   <div class="section-head">
-    <span class="label">我 的 站 點</span>
+    <span class="label">MK牛交通 · 常 用</span>
     <span class="edit-btn" id="editBtn">編輯</span>
   </div>
   <div id="favList"></div>
@@ -425,7 +405,7 @@ async function fetchRealEtas(station) {
   } catch (e) { console.error("ETA Fetch 失敗", e); }
 }
 
-// ===== 日常頁 =====
+// ===== 日常頁 (編輯模式簡化版) =====
 let editingDaily = false;
 const dailyEditBtn = document.getElementById("dailyEditBtn");
 
@@ -449,10 +429,9 @@ function renderDaily() {
     const grouped = {};
     items.forEach(f => {
       if (!grouped[f.stopId]) {
-        grouped[f.stopId] = { stopId: f.stopId, stopName: f.stopName, stopCode: f.stopCode, routes: [], slot, rawItems: [] };
+        grouped[f.stopId] = { stopId: f.stopId, stopName: f.stopName, stopCode: f.stopCode, routes: [] };
       }
       if (f.routes) grouped[f.stopId].routes.push(...f.routes);
-      grouped[f.stopId].rawItems.push(f);
     });
 
     Object.values(grouped).forEach(station => {
@@ -475,12 +454,12 @@ function renderDaily() {
 
       html += `
         <div class="station-card ${editingDaily ? 'editing' : ''}" data-slot="${slot}" data-stopid="${station.stopId}">
+          ${editingDaily ? `<span class="del-btn" onclick="window.deleteDailyStation('${slot}', '${station.stopId}')">${SVG.x}</span>` : ""}
           <div class="station-title">
             <div class="station-name-wrap">
               <span class="station-name">${station.stopName}</span>
               ${station.stopCode ? `<span class="stop-code">${station.stopCode}</span>` : ""}
             </div>
-            <span class="edit-station-btn" onclick="window.openEditMenu('${slot}', '${station.stopId}', event)">管理 ⚙️</span>
           </div>
           <div class="route-list">${routesHtml}</div>
         </div>
@@ -502,85 +481,12 @@ dailyEditBtn.onclick = () => {
   renderDaily();
 };
 
-window.openEditMenu = (slot, stopId, e) => {
-  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
-  
-  const targetItems = DAILY_FAVS.filter(f => f.slot === slot && f.stopId === stopId);
-  if (targetItems.length === 0) return;
-  
-  const stopName = targetItems[0].stopName;
-  const rect = e.target.getBoundingClientRect();
-  
-  const menu = document.createElement("div");
-  menu.className = "edit-menu";
-  menu.style.top = (rect.bottom + 8) + "px";
-  menu.style.left = Math.max(8, Math.min(rect.left - 150, window.innerWidth - 280)) + "px";
-  
-  let menuHtml = `<div class="menu-title">${stopName}</div>`;
-  
-  targetItems.forEach(item => {
-    const routeInfo = item.routes[0];
-    const coClass = getCompanyClass(routeInfo.co);
-    const otherSlots = SLOT_ORDER.filter(s => s !== slot);
-    
-    menuHtml += `
-      <div class="menu-route-row">
-        <div class="menu-route-left">
-          <span class="route-badge-sm ${coClass}">${routeInfo.route}</span> 往 ${routeInfo.dest}
-        </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          ${otherSlots.map(s => `<button class="menu-action-btn" onclick="window.moveRoute('${slot}', '${s}', '${stopId}', '${item.routeKey}', '${routeInfo.route}')">搬去${SLOT_NAMES[s].replace(/ /g, "")}</button>`).join('')}
-          <button class="menu-action-btn danger" onclick="window.deleteRoute('${slot}', '${stopId}', '${item.routeKey}')">✕</button>
-        </div>
-      </div>
-    `;
-  });
-  
-  menuHtml += `<div class="menu-footer" onclick="window.deleteAllRoutes('${slot}', '${stopId}')">清空此時段所有路線</div>`;
-  
-  menu.innerHTML = menuHtml;
-  document.body.appendChild(menu);
-  
-  setTimeout(() => {
-    const close = ev => {
-      if (!menu.contains(ev.target) && !ev.target.closest('.edit-station-btn')) {
-        menu.remove();
-        document.removeEventListener("click", close);
-      }
-    };
-    document.addEventListener("click", close);
-  }, 0);
-};
-
-window.deleteRoute = (slot, stopId, routeKey) => {
-  DAILY_FAVS = DAILY_FAVS.filter(f => !(f.slot === slot && f.stopId === stopId && f.routeKey === routeKey));
-  saveStorage(); renderDaily(); updateBadge(); updateStarState();
-  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
-};
-
-window.moveRoute = (fromSlot, toSlot, stopId, routeKey, routeNum) => {
-  const item = DAILY_FAVS.find(f => f.slot === fromSlot && f.stopId === stopId && f.routeKey === routeKey);
-  if (!item) return;
-  
-  const existing = DAILY_FAVS.find(f => f.slot === toSlot && f.stopId === stopId && f.routeKey === routeKey);
-  if (existing) {
-    showToast(`該時段已經有 ${routeNum} 號線`);
-  } else {
-    item.slot = toSlot;
-    saveStorage(); renderDaily(); updateBadge();
-    showToast(`${routeNum} 已搬去 ${SLOT_NAMES[toSlot].replace(/ /g, "")}`);
-  }
-  updateStarState();
-  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
-};
-
-window.deleteAllRoutes = (slot, stopId) => {
+window.deleteDailyStation = (slot, stopId) => {
   DAILY_FAVS = DAILY_FAVS.filter(f => !(f.slot === slot && f.stopId === stopId));
   saveStorage(); renderDaily(); updateBadge(); updateStarState();
-  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
 };
 
-// ===== 常用頁 =====
+// ===== 常用頁 (編輯模式簡化版) =====
 let editing = false;
 const editBtn = document.getElementById("editBtn");
 function applyEditMode() {
@@ -884,7 +790,7 @@ async function renderRouteStops(routeKey) {
 document.getElementById("searchBtn").onclick = performSearch;
 document.getElementById("searchInput").addEventListener("keydown", e => { if (e.key === "Enter") performSearch(); });
 
-// ===== 星掣 =====
+// ===== 星掣 (修復 Bug) =====
 document.body.addEventListener("click", e => {
   const btn = e.target.closest(".star-station");
   if (!btn) return;
@@ -983,7 +889,7 @@ async function fetchEtasForSaved() {
 
 setInterval(() => { if (!settings.auto) return; fetchEtasForSaved(); }, 30000);
 
-// ===== IndexedDB Cache (修復 Load 慢問題) =====
+// ===== IndexedDB Cache =====
 const DB_NAME = "muji_bus_db";
 const STORE_NAME = "etadb";
 const CACHE_KEY = "etadb_cache";
