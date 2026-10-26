@@ -3,13 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MK Bus</title>
-<link rel="icon" type="image/jpeg" href="favicon.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>無印巴士</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 
-  
 <style>
-  /* ... (保留你之前所有 CSS，一模一樣) ... */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif; background: #f7f7f5; color: #333; padding: 32px 20px 100px; max-width: 420px; margin: 0 auto; line-height: 1.6; font-weight: 300; }
   
@@ -59,7 +57,7 @@
   .fav-group-title .slot-icon { width: 18px; height: 18px; color: #777; flex-shrink: 0; stroke-width: 1.5; }
   .fav-group-title .now { font-size: 10px; letter-spacing: 1px; color: #777; border: 1px solid #ccc; padding: 0 6px; border-radius: 2px; margin-left: auto; }
   .fav-group-title .empty { font-size: 11px; letter-spacing: 1px; color: #ccc; margin-left: 4px; border: none; padding: 0; }
-  .station-card { padding: 16px 0; border-bottom: 1px solid #eee; }
+  .station-card { padding: 16px 0; border-bottom: 1px solid #eee; position: relative; }
   .station-title { font-size: 16px; color: #333; font-weight: 400; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
   .station-name-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .station-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px; }
@@ -88,6 +86,13 @@
   .route-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 12px; }
   .icon-btn { width: 18px; height: 18px; color: #ccc; cursor: pointer; transition: color .2s; display: flex; align-items: center; justify-content: center; }
   .icon-btn.on { color: #333; }
+  
+  /* 日常頁編輯模式 */
+  .station-card.editing .route-progress-row { display: none; }
+  .edit-station-btn { display: none; font-size: 12px; color: #007aff; cursor: pointer; letter-spacing: 1px; border: 1px solid #007aff; padding: 2px 8px; border-radius: 4px; }
+  .station-card.editing .edit-station-btn { display: inline-block; }
+  .station-card.editing .star-station { display: none; }
+
   .drag-handle { display: none; width: 18px; height: 18px; color: #ccc; margin-right: 8px; cursor: grab; flex-shrink: 0; }
   .station-card.editing .drag-handle { display: block; }
   .station-card.dragging { opacity: 0.4; }
@@ -98,7 +103,7 @@
   .edit-btn.done { color: #333; }
   .del-btn { display: none; width: 20px; height: 20px; color: #d9534f; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
   .station-card.editing .del-btn { display: block; }
-  .station-card.editing .icon-btn, .station-card.editing .route-progress-row { display: none; }
+  .station-card.editing .icon-btn { display: none; }
   .history-item { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #333; cursor: pointer; }
   .history-item:last-child { border-bottom: none; }
   .history-left { flex: 1; min-width: 0; }
@@ -134,15 +139,33 @@
   .backup-textarea { width: 100%; height: 80px; padding: 10px; margin-top: 8px; border: 1px solid #ddd; background: #fff; font-size: 12px; font-family: "SF Mono", "Menlo", monospace; color: #666; resize: none; outline: none; }
   #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; font-size: 13px; letter-spacing: 1px; padding: 10px 20px; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 60; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .star-menu { position: fixed; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.08); z-index: 50; min-width: 200px; }
-  .star-menu .menu-title { padding: 10px 16px 6px; font-size: 10px; letter-spacing: 2px; color: #bbb; border-bottom: 1px solid #eee; }
-  .star-menu .item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: #333; cursor: pointer; border-bottom: 1px solid #eee; }
-  .star-menu .item:last-child { border-bottom: none; }
-  .star-menu .item:hover { background: #f7f7f5; }
-  .star-menu .item .svg-icon { width: 14px; height: 14px; color: #999; flex-shrink: 0; }
-  .star-menu .item .check { margin-left: auto; width: 14px; height: 14px; color: #333; }
-  .star-menu .item .check.hidden { visibility: hidden; }
-  .star-menu .item.cancel { color: #999; justify-content: center; font-size: 12px; letter-spacing: 1px; }
+  
+  /* 編輯選單 */
+  .edit-menu {
+    position: fixed;
+    background: #fff; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 50; min-width: 260px; border-radius: 8px; overflow: hidden;
+  }
+  .edit-menu .menu-title { padding: 12px 16px; font-size: 13px; font-weight: 400; color: #333; border-bottom: 1px solid #eee; background: #f9f9f9; }
+  .edit-menu .menu-route-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid #f2f2f2; font-size: 14px; flex-wrap: wrap; gap: 8px;
+  }
+  .edit-menu .menu-route-row:last-child { border-bottom: none; }
+  .edit-menu .menu-route-left { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+  .edit-menu .menu-action-btn {
+    font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer;
+    border: 1px solid #ccc; background: transparent; color: #333;
+  }
+  .edit-menu .menu-action-btn.danger { color: #d9534f; border-color: #d9534f; }
+  .edit-menu .menu-action-btn:hover { background: #f0f0f0; }
+  .edit-menu .menu-action-btn.danger:hover { background: #fff0f0; }
+  .edit-menu .menu-footer {
+    padding: 12px 16px; text-align: center; font-size: 12px; color: #999;
+    border-top: 1px solid #eee; cursor: pointer;
+  }
+  .edit-menu .menu-footer:hover { background: #f9f9f9; color: #d9534f; }
+
   #loadingOverlay { position: fixed; inset: 0; background: rgba(247,247,245,0.9); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 14px; letter-spacing: 1px; }
   #loadingOverlay.hide { display: none; }
 </style>
@@ -160,6 +183,10 @@
 </div>
 
 <div class="page active" id="pageDaily">
+  <div class="section-head">
+    <span class="label">日 常 收 藏</span>
+    <span class="edit-btn" id="dailyEditBtn">編輯</span>
+  </div>
   <div id="dailyGroups"></div>
 </div>
 
@@ -257,9 +284,6 @@
 
   <div class="settings-section">其 他</div>
   <button class="backup-btn" id="clearCacheBtn" style="color:#d9534f; border-color:#d9534f;">清除路線資料庫 Cache</button>
-  <div style="font-size:11px; color:#bbb; margin-top:8px; letter-spacing:0.5px;">
-    路線資料庫每 30 日自動更新一次。如果發現路線資料過時，可以手動清除。
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -267,7 +291,6 @@
 <script type="module">
 import { fetchEtaDb, fetchEtas } from 'https://esm.sh/hk-bus-eta@3.8.4';
 
-// ===== SVG =====
 const SVG = {
   star: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
   starFill: `<svg class="svg-icon fill" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
@@ -280,7 +303,6 @@ const SVG = {
   bus: `<svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="14" rx="2"/><line x1="4" y1="11" x2="20" y2="11"/><circle cx="8" cy="20" r="1.5"/><circle cx="16" cy="20" r="1.5"/></svg>`,
 };
 
-// ===== 全局變量 =====
 let etaDb = null;
 let DAILY_FAVS = JSON.parse(localStorage.getItem("muji_daily_favs") || "[]");
 let MY_ROUTES = JSON.parse(localStorage.getItem("muji_favs") || "[]");
@@ -300,7 +322,6 @@ let slotTimes = {
 
 const savedSettings = JSON.parse(localStorage.getItem("muji_settings") || "{}");
 Object.assign(settings, savedSettings);
-
 const savedSlots = JSON.parse(localStorage.getItem("muji_slot_times") || "null");
 if (savedSlots) slotTimes = savedSlots;
 
@@ -313,7 +334,6 @@ function saveStorage() {
   localStorage.setItem("muji_slot_times", JSON.stringify(slotTimes));
 }
 
-// ===== 時段判斷 =====
 function parseTime(t) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
@@ -322,24 +342,17 @@ function parseTime(t) {
 function currentSlot() {
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  
   const check = (slot) => {
     const s = parseTime(slotTimes[slot].start);
     const e = parseTime(slotTimes[slot].end);
-    if (s < e) {
-      return nowMin >= s && nowMin < e;
-    } else {
-      return nowMin >= s || nowMin < e;
-    }
+    return s < e ? (nowMin >= s && nowMin < e) : (nowMin >= s || nowMin < e);
   };
-  
   if (check("morning")) return "morning";
   if (check("noon")) return "noon";
   if (check("evening")) return "evening";
   return "morning";
 }
 
-// ===== 營辦商標籤 =====
 function getCoArray(co) {
   if (!co) return [];
   if (Array.isArray(co)) return co.map(c => String(c).toLowerCase());
@@ -347,7 +360,6 @@ function getCoArray(co) {
   if (typeof co === 'object') return [String(co.zh || co.en || "").toLowerCase()];
   return [String(co).toLowerCase()];
 }
-
 function getCompanyClass(co) {
   const arr = getCoArray(co);
   if (arr.some(c => c.includes('kmb'))) return 'kmb';
@@ -355,7 +367,6 @@ function getCompanyClass(co) {
   if (arr.some(c => c.includes('gmb'))) return 'gmb';
   return 'default';
 }
-
 function getCompanyName(co) {
   const arr = getCoArray(co);
   if (arr.some(c => c.includes('kmb'))) return '九巴';
@@ -364,14 +375,12 @@ function getCompanyName(co) {
   return arr.join(', ').toUpperCase();
 }
 
-// ===== 渲染 =====
 function renderProgressBar(etas) {
   if (!etas || etas.length === 0) return "";
   const maxMin = 45;
   const sortedEtas = [...etas].filter(m => m !== null).sort((a, b) => a - b);
   let busHtml = "";
   let lastPos = -999;
-
   sortedEtas.forEach((min, index) => {
     let pos;
     if (min <= 0) pos = 5 + (index * 7); 
@@ -380,25 +389,14 @@ function renderProgressBar(etas) {
     lastPos = pos;
     busHtml += `<svg class="progress-bus" style="left: ${pos}%;" viewBox="0 0 24 24" fill="${min <= 0 ? '#333' : min <= 5 ? '#555' : min <= 15 ? '#888' : min <= 30 ? '#bbb' : '#ddd'}"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z"/></svg>`;
   });
-
-  return `
-    <div class="progress-track">
-      <div class="progress-dot"></div>
-      <div class="progress-line-bg"></div>
-      <div class="progress-buses">${busHtml}</div>
-      <div class="progress-dot end"></div>
-    </div>
-  `;
+  return `<div class="progress-track"><div class="progress-dot"></div><div class="progress-line-bg"></div><div class="progress-buses">${busHtml}</div><div class="progress-dot end"></div></div>`;
 }
 
 function renderEtaHtml(etas) {
   if (!etas || etas.length === 0) return `<div class="eta-text" style="color:#ccc;">暫無班次</div>`;
   let textHtml = etas.map(m => {
     if (m === null) return `<span class="soon">-</span>`;
-    if (m <= 0) {
-      if (settings.soon) return `<span class="soon">即將到站</span>`;
-      return `0 分鐘`;
-    }
+    if (m <= 0) return settings.soon ? `<span class="soon">即將到站</span>` : `0 分鐘`;
     return `${m} <span class="mins">分</span>`;
   }).join(" · ");
   return `<div class="eta-text">${textHtml}</div>`;
@@ -410,39 +408,26 @@ function whereSaved(stopId, routeKey) {
   return { daily, fav };
 }
 
-// ===== 核心數據 =====
 async function fetchRealEtas(station) {
   try {
     const routeData = etaDb.routeList[station.routeKey];
     if (!routeData) return;
-    
-    const etas = await fetchEtas({
-      ...routeData,
-      seq: station.seq,
-      language: "zh"
-    });
-
+    const etas = await fetchEtas({ ...routeData, seq: station.seq, language: "zh" });
     const now = Date.now();
     const minsArray = etas.map(e => {
       if (!e.eta) return null;
       const diff = Math.round((new Date(e.eta).getTime() - now) / 60000);
       return diff < 0 ? 0 : diff;
     });
-
-    station.routes = [{
-      route: routeData.route,
-      dest: routeData.dest.zh,
-      co: routeData.co,
-      etas: minsArray
-    }];
-    
+    station.routes = [{ route: routeData.route, dest: routeData.dest.zh, co: routeData.co, etas: minsArray }];
     if (document.getElementById("pageDaily").classList.contains("active")) renderDaily();
     if (document.getElementById("pageFav").classList.contains("active")) renderFav();
-
-  } catch (e) {
-    console.error("ETA Fetch 失敗", e);
-  }
+  } catch (e) { console.error("ETA Fetch 失敗", e); }
 }
+
+// ===== 日常頁 =====
+let editingDaily = false;
+const dailyEditBtn = document.getElementById("dailyEditBtn");
 
 function renderDaily() {
   const nowSlot = currentSlot();
@@ -464,14 +449,10 @@ function renderDaily() {
     const grouped = {};
     items.forEach(f => {
       if (!grouped[f.stopId]) {
-        grouped[f.stopId] = {
-          stopId: f.stopId,
-          stopName: f.stopName,
-          stopCode: f.stopCode,
-          routes: []
-        };
+        grouped[f.stopId] = { stopId: f.stopId, stopName: f.stopName, stopCode: f.stopCode, routes: [], slot, rawItems: [] };
       }
       if (f.routes) grouped[f.stopId].routes.push(...f.routes);
+      grouped[f.stopId].rawItems.push(f);
     });
 
     Object.values(grouped).forEach(station => {
@@ -493,12 +474,13 @@ function renderDaily() {
       `}).join("");
 
       html += `
-        <div class="station-card">
+        <div class="station-card ${editingDaily ? 'editing' : ''}" data-slot="${slot}" data-stopid="${station.stopId}">
           <div class="station-title">
             <div class="station-name-wrap">
               <span class="station-name">${station.stopName}</span>
               ${station.stopCode ? `<span class="stop-code">${station.stopCode}</span>` : ""}
             </div>
+            <span class="edit-station-btn" onclick="window.openEditMenu('${slot}', '${station.stopId}', event)">管理 ⚙️</span>
           </div>
           <div class="route-list">${routesHtml}</div>
         </div>
@@ -508,8 +490,116 @@ function renderDaily() {
     html += `</div>`;
   });
   document.getElementById("dailyGroups").innerHTML = html;
+  
+  dailyEditBtn.textContent = editingDaily ? "完成" : "編輯";
+  dailyEditBtn.classList.toggle("done", editingDaily);
+  
   updateStarState();
 }
+
+dailyEditBtn.onclick = () => {
+  editingDaily = !editingDaily;
+  renderDaily();
+};
+
+window.openEditMenu = (slot, stopId, e) => {
+  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
+  
+  const targetItems = DAILY_FAVS.filter(f => f.slot === slot && f.stopId === stopId);
+  if (targetItems.length === 0) return;
+  
+  const stopName = targetItems[0].stopName;
+  const rect = e.target.getBoundingClientRect();
+  
+  const menu = document.createElement("div");
+  menu.className = "edit-menu";
+  menu.style.top = (rect.bottom + 8) + "px";
+  menu.style.left = Math.max(8, Math.min(rect.left - 150, window.innerWidth - 280)) + "px";
+  
+  let menuHtml = `<div class="menu-title">${stopName}</div>`;
+  
+  targetItems.forEach(item => {
+    const routeInfo = item.routes[0];
+    const coClass = getCompanyClass(routeInfo.co);
+    const otherSlots = SLOT_ORDER.filter(s => s !== slot);
+    
+    menuHtml += `
+      <div class="menu-route-row">
+        <div class="menu-route-left">
+          <span class="route-badge-sm ${coClass}">${routeInfo.route}</span> 往 ${routeInfo.dest}
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${otherSlots.map(s => `<button class="menu-action-btn" onclick="window.moveRoute('${slot}', '${s}', '${stopId}', '${item.routeKey}', '${routeInfo.route}')">搬去${SLOT_NAMES[s].replace(/ /g, "")}</button>`).join('')}
+          <button class="menu-action-btn danger" onclick="window.deleteRoute('${slot}', '${stopId}', '${item.routeKey}')">✕</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  menuHtml += `<div class="menu-footer" onclick="window.deleteAllRoutes('${slot}', '${stopId}')">清空此時段所有路線</div>`;
+  
+  menu.innerHTML = menuHtml;
+  document.body.appendChild(menu);
+  
+  setTimeout(() => {
+    const close = ev => {
+      if (!menu.contains(ev.target) && !ev.target.closest('.edit-station-btn')) {
+        menu.remove();
+        document.removeEventListener("click", close);
+      }
+    };
+    document.addEventListener("click", close);
+  }, 0);
+};
+
+window.deleteRoute = (slot, stopId, routeKey) => {
+  DAILY_FAVS = DAILY_FAVS.filter(f => !(f.slot === slot && f.stopId === stopId && f.routeKey === routeKey));
+  saveStorage(); renderDaily(); updateBadge(); updateStarState();
+  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
+};
+
+window.moveRoute = (fromSlot, toSlot, stopId, routeKey, routeNum) => {
+  const item = DAILY_FAVS.find(f => f.slot === fromSlot && f.stopId === stopId && f.routeKey === routeKey);
+  if (!item) return;
+  
+  const existing = DAILY_FAVS.find(f => f.slot === toSlot && f.stopId === stopId && f.routeKey === routeKey);
+  if (existing) {
+    showToast(`該時段已經有 ${routeNum} 號線`);
+  } else {
+    item.slot = toSlot;
+    saveStorage(); renderDaily(); updateBadge();
+    showToast(`${routeNum} 已搬去 ${SLOT_NAMES[toSlot].replace(/ /g, "")}`);
+  }
+  updateStarState();
+  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
+};
+
+window.deleteAllRoutes = (slot, stopId) => {
+  DAILY_FAVS = DAILY_FAVS.filter(f => !(f.slot === slot && f.stopId === stopId));
+  saveStorage(); renderDaily(); updateBadge(); updateStarState();
+  document.querySelectorAll(".edit-menu").forEach(m => m.remove());
+};
+
+// ===== 常用頁 =====
+let editing = false;
+const editBtn = document.getElementById("editBtn");
+function applyEditMode() {
+  document.querySelectorAll("#favList .station-card").forEach(item => {
+    item.classList.toggle("editing", editing);
+    item.draggable = editing;
+  });
+  editBtn.textContent = editing ? "完成" : "編輯";
+  editBtn.classList.toggle("done", editing);
+}
+function exitEditMode() { editing = false; if (editBtn) applyEditMode(); }
+editBtn.onclick = () => { editing = !editing; renderFav(); };
+document.getElementById("favList").addEventListener("click", e => {
+  const del = e.target.closest("[data-del]");
+  if (!del) return;
+  const stopId = del.dataset.del;
+  MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
+  saveStorage(); renderFav(); updateStarState();
+});
 
 function renderFav() {
   const el = document.getElementById("favList");
@@ -517,20 +607,11 @@ function renderFav() {
     el.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">未有站點，撳下面加</div></div>`;
     return;
   }
-  
   const grouped = {};
   MY_ROUTES.forEach(f => {
-    if (!grouped[f.stopId]) {
-      grouped[f.stopId] = {
-        stopId: f.stopId,
-        stopName: f.stopName,
-        stopCode: f.stopCode,
-        routes: []
-      };
-    }
+    if (!grouped[f.stopId]) grouped[f.stopId] = { stopId: f.stopId, stopName: f.stopName, stopCode: f.stopCode, routes: [] };
     if (f.routes) grouped[f.stopId].routes.push(...f.routes);
   });
-
   let html = "";
   Object.values(grouped).forEach(station => {
     let routesHtml = station.routes.map(r => {
@@ -549,7 +630,6 @@ function renderFav() {
         </div>
       </div>
     `}).join("");
-
     html += `
       <div class="station-card" data-id="${station.stopId}" draggable="${editing}">
         ${editing ? `<span class="drag-handle">${SVG.drag}</span>` : ""}
@@ -564,7 +644,6 @@ function renderFav() {
       </div>
     `;
   });
-  
   el.innerHTML = html;
   applyEditMode();
 }
@@ -601,7 +680,6 @@ function renderHistory() {
   `).join("");
 }
 
-// ===== Tab =====
 document.querySelectorAll(".tab").forEach(tab => {
   tab.onclick = () => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -610,10 +688,10 @@ document.querySelectorAll(".tab").forEach(tab => {
     document.getElementById(tab.dataset.page).classList.add("active");
     document.getElementById("pageTitle").textContent = tab.dataset.title;
     if (tab.dataset.page !== "pageFav") exitEditMode();
+    if (tab.dataset.page !== "pageDaily" && editingDaily) { editingDaily = false; renderDaily(); }
   };
 });
 
-// ===== 設定 =====
 const overlay = document.getElementById("settingsOverlay");
 const panel = document.getElementById("settingsPanel");
 function openSettings() { overlay.classList.add("show"); panel.classList.add("show"); }
@@ -634,7 +712,6 @@ document.querySelectorAll(".switch[data-setting]").forEach(sw => {
 
 const poTokenEl = document.getElementById("poToken");
 if (poTokenEl) poTokenEl.oninput = e => { settings.poToken = e.target.value; saveStorage(); };
-
 const poUserEl = document.getElementById("poUser");
 if (poUserEl) poUserEl.oninput = e => { settings.poUser = e.target.value; saveStorage(); };
 
@@ -648,9 +725,7 @@ if (poUserEl) poUserEl.oninput = e => { settings.poUser = e.target.value; saveSt
     slotTimes.noon.end = document.getElementById("tNoonEnd").value;
     slotTimes.evening.start = document.getElementById("tEveningStart").value;
     slotTimes.evening.end = document.getElementById("tEveningEnd").value;
-    saveStorage();
-    renderDaily();
-    updateBadge();
+    saveStorage(); renderDaily(); updateBadge();
   };
 });
 
@@ -686,77 +761,33 @@ document.getElementById("clearCacheBtn").onclick = async () => {
   showToast("已清除 Cache，請重新整理網頁");
 };
 
-// ===== 編輯模式 =====
-let editing = false;
-const editBtn = document.getElementById("editBtn");
-
-function applyEditMode() {
-  document.querySelectorAll("#favList .station-card").forEach(item => {
-    item.classList.toggle("editing", editing);
-    item.draggable = editing;
-  });
-  editBtn.textContent = editing ? "完成" : "編輯";
-  editBtn.classList.toggle("done", editing);
-}
-
-function exitEditMode() { editing = false; if (editBtn) applyEditMode(); }
-
-editBtn.onclick = () => { editing = !editing; renderFav(); };
-
-document.getElementById("favList").addEventListener("click", e => {
-  const del = e.target.closest("[data-del]");
-  if (!del) return;
-  const stopId = del.dataset.del;
-  MY_ROUTES = MY_ROUTES.filter(f => f.stopId !== stopId);
-  saveStorage(); renderFav(); updateStarState();
-});
-
 // ===== 搜尋 =====
 function renderQuickRoutes() {
-  document.getElementById("quickRoutes").innerHTML = QUICK_ROUTES.map(r => 
-    `<span class="quick-route" data-route="${r}">${r}</span>`
-  ).join("");
+  document.getElementById("quickRoutes").innerHTML = QUICK_ROUTES.map(r => `<span class="quick-route" data-route="${r}">${r}</span>`).join("");
   document.querySelectorAll(".quick-route").forEach(el => {
     el.onclick = () => { document.getElementById("searchInput").value = el.dataset.route; performSearch(); };
   });
 }
-
 function resetSearchPage() {
-  document.getElementById("searchResultsContainer").innerHTML = `
-    <div class="dir-title">最近搜尋</div>
-    <div id="quickRoutes" class="quick-routes"></div>
-  `;
+  document.getElementById("searchResultsContainer").innerHTML = `<div class="dir-title">最近搜尋</div><div id="quickRoutes" class="quick-routes"></div>`;
   renderQuickRoutes();
 }
-
 let currentSearchQuery = ""; 
-
 function performSearch() {
   const query = document.getElementById("searchInput").value.trim().toUpperCase();
   if (!query) return;
-
   currentSearchQuery = query; 
-
   MOCK_HISTORY = MOCK_HISTORY.filter(h => h.route !== query);
-  MOCK_HISTORY.unshift({
-    route: query,
-    dest: "搜尋路線",
-    time: "今日 " + new Date().toTimeString().slice(0, 5)
-  });
+  MOCK_HISTORY.unshift({ route: query, dest: "搜尋路線", time: "今日 " + new Date().toTimeString().slice(0, 5) });
   if (MOCK_HISTORY.length > 10) MOCK_HISTORY.pop();
-  saveStorage();
-  renderHistory();
-
+  saveStorage(); renderHistory();
   if (!QUICK_ROUTES.includes(query)) {
     QUICK_ROUTES.unshift(query);
     if (QUICK_ROUTES.length > 5) QUICK_ROUTES.pop();
     saveStorage();
   }
-
   if (!etaDb) { showToast("數據庫載入中..."); return; }
-
   const container = document.getElementById("searchResultsContainer");
-  
   const routeKeys = Object.keys(etaDb.routeList);
   const rawResults = routeKeys.filter(key => {
     const r = etaDb.routeList[key];
@@ -764,46 +795,28 @@ function performSearch() {
     if (coArr.some(c => c.includes('gmb'))) return false;
     return r.route.toUpperCase().includes(query);
   });
-
-  if (rawResults.length === 0) {
-    container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到巴士路線 ${query}</div></div>`;
-    return;
-  }
-
+  if (rawResults.length === 0) { container.innerHTML = `<div class="empty-state">${SVG.bus}<div class="text">搵唔到巴士路線 ${query}</div></div>`; return; }
   const uniqueResults = [];
   const seen = new Set();
-
   rawResults.forEach(key => {
     const r = etaDb.routeList[key];
     const boundStr = typeof r.bound === 'object' ? JSON.stringify(r.bound) : String(r.bound);
     const uniqueKey = `${r.route}_${r.orig.zh}_${r.dest.zh}_${boundStr}`;
-    
-    if (!seen.has(uniqueKey)) {
-      seen.add(uniqueKey);
-      uniqueResults.push(key);
-    }
+    if (!seen.has(uniqueKey)) { seen.add(uniqueKey); uniqueResults.push(key); }
   });
-
   uniqueResults.sort((a, b) => {
     const ra = etaDb.routeList[a].route;
     const rb = etaDb.routeList[b].route;
     if (ra !== rb) return ra.localeCompare(rb, undefined, { numeric: true });
-    
-    const coA = getCoArray(etaDb.routeList[a].co).join(',');
-    const coB = getCoArray(etaDb.routeList[b].co).join(',');
-    return coA.localeCompare(coB);
+    return getCoArray(etaDb.routeList[a].co).join(',').localeCompare(getCoArray(etaDb.routeList[b].co).join(','));
   });
-
   container.innerHTML = `<div class="dir-title">搜尋結果 (${uniqueResults.length})</div>`;
-  
   uniqueResults.forEach(key => {
     const routeData = etaDb.routeList[key];
     const coClass = getCompanyClass(routeData.co);
     const coName = getCompanyName(routeData.co);
-    
     const div = document.createElement("div");
     div.className = "route-search-card";
-    
     div.innerHTML = `
       <div class="route-search-left">
         <div class="route-number-text ${coClass}">${routeData.route}</div>
@@ -814,77 +827,44 @@ function performSearch() {
         <svg class="svg-icon sm" viewBox="0 0 24 24" style="color:#ccc;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
     `;
-    
     div.onclick = () => renderRouteStops(key);
     container.appendChild(div);
   });
 }
-
 window.resetSearchPage = () => {
-  if (currentSearchQuery) {
-    document.getElementById("searchInput").value = currentSearchQuery;
-    performSearch();
-  } else {
-    document.getElementById("searchResultsContainer").innerHTML = `
-      <div class="dir-title">最近搜尋</div>
-      <div id="quickRoutes" class="quick-routes"></div>
-    `;
-    renderQuickRoutes();
-  }
+  if (currentSearchQuery) { document.getElementById("searchInput").value = currentSearchQuery; performSearch(); }
+  else { document.getElementById("searchResultsContainer").innerHTML = `<div class="dir-title">最近搜尋</div><div id="quickRoutes" class="quick-routes"></div>`; renderQuickRoutes(); }
 };
-
 async function renderRouteStops(routeKey) {
   const container = document.getElementById("searchResultsContainer");
   const routeData = etaDb.routeList[routeKey];
-  
-  let html = `
+  container.innerHTML = `
     <div class="back-btn" style="margin-bottom: 16px; font-size: 13px; color: #999; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="window.resetSearchPage()">
-      <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      返回路線列表
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 返回路線列表
     </div>
     <div class="dir-title">${routeData.route} 往 ${routeData.dest.zh}</div>
     <div id="stopListContainer"><div style="text-align:center; padding:20px; color:#999;">載入站點及實時數據中...</div></div>
   `;
-  container.innerHTML = html;
-
   const stopListEl = document.getElementById("stopListContainer");
-  
   const coArr = getCoArray(routeData.co);
   let stopsArray = [];
-  if (coArr.some(c => c.includes('kmb')) && routeData.stops.kmb) {
-    stopsArray = routeData.stops.kmb;
-  } else if (coArr.some(c => c.includes('ctb')) && routeData.stops.ctb) {
-    stopsArray = routeData.stops.ctb;
-  } else if (coArr.some(c => c.includes('nwfb')) && routeData.stops.nwfb) {
-    stopsArray = routeData.stops.nwfb;
-  } else {
-    const firstKey = Object.keys(routeData.stops)[0];
-    if (firstKey) stopsArray = routeData.stops[firstKey];
-  }
-
+  if (coArr.some(c => c.includes('kmb')) && routeData.stops.kmb) stopsArray = routeData.stops.kmb;
+  else if (coArr.some(c => c.includes('ctb')) && routeData.stops.ctb) stopsArray = routeData.stops.ctb;
+  else if (coArr.some(c => c.includes('nwfb')) && routeData.stops.nwfb) stopsArray = routeData.stops.nwfb;
+  else { const firstKey = Object.keys(routeData.stops)[0]; if (firstKey) stopsArray = routeData.stops[firstKey]; }
   const fetchPromises = stopsArray.map((stopId, i) => {
-    return fetchEtas({ ...routeData, seq: i, language: "zh" })
-      .then(etas => {
-        const now = Date.now();
-        const minsArray = etas.map(e => e.eta ? Math.round((new Date(e.eta).getTime() - now) / 60000) : null);
-        return { stopId, index: i, minsArray };
-      })
-      .catch(e => {
-        return { stopId, index: i, minsArray: [] };
-      });
+    return fetchEtas({ ...routeData, seq: i, language: "zh" }).then(etas => {
+      const now = Date.now();
+      const minsArray = etas.map(e => e.eta ? Math.round((new Date(e.eta).getTime() - now) / 60000) : null);
+      return { stopId, index: i, minsArray };
+    }).catch(e => ({ stopId, index: i, minsArray: [] }));
   });
-
   const results = await Promise.all(fetchPromises);
-
   let stopHtml = "";
   results.forEach(({ stopId, index, minsArray }) => {
     const stopInfo = etaDb.stopList[stopId]; 
-    let stopName = `未知站點 (${stopId})`;
-    if (stopInfo && stopInfo.name && stopInfo.name.zh) {
-      stopName = stopInfo.name.zh;
-    }
+    let stopName = stopInfo && stopInfo.name && stopInfo.name.zh ? stopInfo.name.zh : `未知站點 (${stopId})`;
     const stopCode = (stopInfo && stopInfo.code) ? stopInfo.code : "";
-
     stopHtml += `
       <div class="simple-stop-item">
         <div class="simple-stop-left">
@@ -898,103 +878,71 @@ async function renderRouteStops(routeKey) {
       </div>
     `;
   });
-
   stopListEl.innerHTML = stopHtml;
   updateStarState();
 }
-
 document.getElementById("searchBtn").onclick = performSearch;
-document.getElementById("searchInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") performSearch();
-});
+document.getElementById("searchInput").addEventListener("keydown", e => { if (e.key === "Enter") performSearch(); });
 
 // ===== 星掣 =====
 document.body.addEventListener("click", e => {
   const btn = e.target.closest(".star-station");
   if (!btn) return;
   e.stopPropagation();
-  
   const stopId = btn.dataset.stopId;
   const stopName = btn.dataset.stopName;
   const routeKey = btn.dataset.routeKey;
   const seq = Number(btn.dataset.seq);
-  
-  if (document.querySelector(".star-menu")) {
-    document.querySelectorAll(".star-menu").forEach(m => m.remove());
-    return;
-  }
-
+  if (document.querySelector(".star-menu")) { document.querySelectorAll(".star-menu").forEach(m => m.remove()); return; }
   const saved = whereSaved(stopId, routeKey);
   const hasAny = saved.daily.length > 0 || saved.fav;
-
   const rect = btn.getBoundingClientRect();
   const menu = document.createElement("div");
   menu.className = "star-menu";
   menu.style.top = (rect.bottom + 6) + "px";
   menu.style.left = Math.max(8, Math.min(rect.left - 150, window.innerWidth - 210)) + "px";
-
   const item = (slot, icon, label, checked) => `
     <div class="item" data-target="daily" data-slot="${slot}">
-      ${icon}
-      <span>${label}</span>
-      <span class="check ${checked ? "" : "hidden"}">${SVG.check}</span>
+      ${icon}<span>${label}</span><span class="check ${checked ? "" : "hidden"}">${SVG.check}</span>
     </div>`;
-
   menu.innerHTML = `
     <div class="menu-title">${hasAny ? "已 收 藏 — 可 多 選" : "收 藏 此 站"}</div>
     ${item("morning", SVG.morning, "日常 · 早上", saved.daily.includes("morning"))}
     ${item("noon", SVG.noon, "日常 · 中午", saved.daily.includes("noon"))}
     ${item("evening", SVG.evening, "日常 · 晚上", saved.daily.includes("evening"))}
-    <div class="item" data-target="fav">
-      ${SVG.bus}
-      <span>常用</span>
-      <span class="check ${saved.fav ? "" : "hidden"}">${SVG.check}</span>
-    </div>
+    <div class="item" data-target="fav">${SVG.bus}<span>常用</span><span class="check ${saved.fav ? "" : "hidden"}">${SVG.check}</span></div>
     ${hasAny ? `<div class="item" data-target="remove-all" style="color:#d9534f;justify-content:center;font-size:12px;letter-spacing:1px;">全部取消收藏</div>` : ""}
     <div class="item cancel">完成</div>
   `;
   document.body.appendChild(menu);
-
   menu.querySelectorAll(".item").forEach(it => {
     it.onclick = ev => {
       ev.stopPropagation();
       if (it.classList.contains("cancel")) { menu.remove(); return; }
-
       const target = it.dataset.target;
       const routeData = etaDb.routeList[routeKey];
       const stopInfo = etaDb.stopList[stopId];
-
       const newStationObj = {
         stopId, stopName, routeKey, seq,
         stopCode: (stopInfo && stopInfo.code) ? stopInfo.code : "",
         routes: [{ route: routeData.route, dest: routeData.dest.zh, co: routeData.co, etas: [] }]
       };
-
       if (target === "remove-all") {
         DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
         MY_ROUTES = MY_ROUTES.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
       } else if (target === "daily") {
         const slot = it.dataset.slot;
         const exists = DAILY_FAVS.some(f => f.stopId === stopId && f.routeKey === routeKey && f.slot === slot);
-        if (exists) {
-          DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.routeKey === routeKey && f.slot === slot));
-        } else {
-          DAILY_FAVS.push({ ...newStationObj, slot });
-        }
+        if (exists) DAILY_FAVS = DAILY_FAVS.filter(f => !(f.stopId === stopId && f.routeKey === routeKey && f.slot === slot));
+        else DAILY_FAVS.push({ ...newStationObj, slot });
       } else if (target === "fav") {
         const exists = MY_ROUTES.some(f => f.stopId === stopId && f.routeKey === routeKey);
-        if (exists) {
-          MY_ROUTES = MY_ROUTES.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
-        } else {
-          MY_ROUTES.push(newStationObj);
-        }
+        if (exists) MY_ROUTES = MY_ROUTES.filter(f => !(f.stopId === stopId && f.routeKey === routeKey));
+        else MY_ROUTES.push(newStationObj);
       }
-
       saveStorage();
       renderDaily(); renderFav(); updateBadge(); updateStarState();
-      
       if (target === "daily" || target === "fav") fetchEtasForSaved();
-
       const newSaved = whereSaved(stopId, routeKey);
       if (target === "daily") {
         const slot = it.dataset.slot;
@@ -1004,19 +952,14 @@ document.body.addEventListener("click", e => {
       }
     };
   });
-
   setTimeout(() => {
     const close = ev => {
-      if (!menu.contains(ev.target) && !ev.target.closest(".star-station")) { 
-        menu.remove(); 
-        document.removeEventListener("click", close); 
-      }
+      if (!menu.contains(ev.target) && !ev.target.closest(".star-station")) { menu.remove(); document.removeEventListener("click", close); }
     };
     document.addEventListener("click", close);
   }, 0);
 });
 
-// ===== Toast =====
 let toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -1026,50 +969,33 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-// ===== 自動刷新（並行版，避免 Infinite Loop） =====
 async function fetchEtasForSaved() {
   const allStations = [...DAILY_FAVS, ...MY_ROUTES];
   const unique = [];
   const seen = new Set();
   allStations.forEach(st => {
     const key = `${st.routeKey}-${st.stopId}-${st.seq}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(st);
-    }
+    if (!seen.has(key)) { seen.add(key); unique.push(st); }
   });
-  
-  const promises = unique.map(st => fetchRealEtas(st));
-  await Promise.all(promises);
-  
+  await Promise.all(unique.map(st => fetchRealEtas(st)));
   updateBadge();
 }
 
-setInterval(() => {
-  if (!settings.auto) return;
-  fetchEtasForSaved();
-}, 30000);
+setInterval(() => { if (!settings.auto) return; fetchEtasForSaved(); }, 30000);
 
-// ===== IndexedDB Cache =====
+// ===== IndexedDB Cache (修復 Load 慢問題) =====
 const DB_NAME = "muji_bus_db";
 const STORE_NAME = "etadb";
 const CACHE_KEY = "etadb_cache";
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
-
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
+    req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME); };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
-
 async function getCacheFromDB() {
   try {
     const db = await openDB();
@@ -1080,11 +1006,8 @@ async function getCacheFromDB() {
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => resolve(null);
     });
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
-
 async function setCacheToDB(data) {
   try {
     const db = await openDB();
@@ -1095,11 +1018,8 @@ async function setCacheToDB(data) {
       req.onsuccess = () => resolve(true);
       req.onerror = () => resolve(false);
     });
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 }
-
 async function clearEtaDbCache() {
   try {
     const db = await openDB();
@@ -1110,17 +1030,11 @@ async function clearEtaDbCache() {
       req.onsuccess = () => resolve(true);
       req.onerror = () => resolve(false);
     });
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 }
-
 async function loadEtaDbWithCache() {
   const cached = await getCacheFromDB();
-  if (cached && cached.timestamp && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    return cached.data;
-  }
-  
+  if (cached && cached.timestamp && (Date.now() - cached.timestamp < CACHE_TTL)) return cached.data;
   const fresh = await fetchEtaDb();
   await setCacheToDB(fresh);
   return fresh;
@@ -1130,27 +1044,15 @@ async function initApp() {
   try {
     etaDb = await loadEtaDbWithCache();
     document.getElementById("loadingOverlay").classList.add("hide");
-
-    renderDaily();
-    renderFav();
-    renderHistory();
-    resetSearchPage();
-    updateBadge();
-
-    document.querySelectorAll(".switch[data-setting]").forEach(sw => {
-      sw.classList.toggle("on", settings[sw.dataset.setting]);
-    });
-
+    renderDaily(); renderFav(); renderHistory(); resetSearchPage(); updateBadge();
+    document.querySelectorAll(".switch[data-setting]").forEach(sw => sw.classList.toggle("on", settings[sw.dataset.setting]));
     fetchEtasForSaved();
-
   } catch (err) {
     document.getElementById("loadingOverlay").textContent = "載入失敗，請重新整理網頁";
     console.error(err);
   }
 }
-
 initApp();
 </script>
-
 </body>
 </html>
